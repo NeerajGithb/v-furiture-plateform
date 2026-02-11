@@ -1,24 +1,34 @@
 export interface InventoryItem {
   id: string;
-  productId: string;
-  productName: string;
+  productId: {
+    id: string;
+    name: string;
+    mainImage?: {
+      url: string;
+      publicId?: string;
+    };
+  };
   sku: string;
   currentStock: number;
   reservedStock: number;
   availableStock: number;
   reorderLevel: number;
   maxStock: number;
-  lastUpdated: Date;
   status: 'in_stock' | 'low_stock' | 'out_of_stock' | 'discontinued';
+  lastRestocked?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface InventoryStats {
-  totalProducts: number;
+  total: number;
   inStock: number;
   lowStock: number;
   outOfStock: number;
+  discontinued: number;
   totalValue: number;
-  lowStockAlerts: number;
+  totalQuantity?: number;
+  avgPrice?: number;
 }
 
 export interface StockMovement {

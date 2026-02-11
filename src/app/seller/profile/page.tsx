@@ -8,54 +8,53 @@ import {
   useChangeSellerPassword,
   useRequestVerification
 } from '@/hooks/seller/useSellerProfile';
-import { ProfileSkeleton } from './components/ProfileSkeleton';
+import { LoaderGuard } from '@/components/ui/LoaderGuard';
+import PageHeader from '@/components/PageHeader';
 import { ProfileOverview } from './components/ProfileOverview';
-import { ProfileHeader } from './components/ProfileHeader';
 import { ProfileSettings } from './components/ProfileSettings';
 
 export default function SellerProfilePage() {
-  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'business' | 'security' | 'verification'>('business');
 
-  // React Query hooks
-  const { data: profile, isLoading, refetch } = useSellerProfile();
+  const { data: profile, isPending, error, refetch, isFetching } = useSellerProfile();
   const { data: stats } = useSellerProfileStats();
   const updateProfile = useUpdateSellerProfile();
   const changePassword = useChangeSellerPassword();
   const requestVerification = useRequestVerification();
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await refetch();
-    setTimeout(() => setRefreshing(false), 500);
-  };
-
   return (
     <>
-      {isLoading && <ProfileSkeleton />}
-      {!isLoading && (
-        <div className="space-y-6 max-w-7xl mx-auto p-6">
-          <ProfileHeader
-            profile={profile}
-            onRefresh={handleRefresh}
-            refreshing={refreshing}
-          />
+      <PageHeader
+        title="Profile"
+        description="Manage your seller profile and settings"
+        onRefresh={refetch}
+        isRefreshing={isFetching}
+      />
 
-          <ProfileOverview
-            profile={profile} 
-            stats={stats} 
-          />
+      <LoaderGuard 
+        isLoading={isPending} 
+        error={error}
+        isEmpty={!profile}
+        emptyMessage="No profile data"
+      >
+        {() => (
+          <div className="space-y-6 max-w-7xl mx-auto">
+            <ProfileOverview
+              profile={profile!} 
+              stats={stats} 
+            />
 
-          <ProfileSettings
-            profile={profile}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            updateProfile={updateProfile}
-            changePassword={changePassword}
-            requestVerification={requestVerification}
-          />
-        </div>
-      )}
+            <ProfileSettings
+              profile={profile!}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              updateProfile={updateProfile}
+              changePassword={changePassword}
+              requestVerification={requestVerification}
+            />
+          </div>
+        )}
+      </LoaderGuard>
     </>
   );
 }

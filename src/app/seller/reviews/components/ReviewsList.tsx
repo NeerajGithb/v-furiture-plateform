@@ -77,23 +77,12 @@ export function ReviewsList({ reviews, onRespond, isResponding }: ReviewsListPro
     }
   };
 
-  if (reviews.length === 0) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews found</h3>
-        <p className="text-gray-500">Customer reviews will appear here when available</p>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <div className="divide-y divide-gray-200">
         {reviews.map((review) => (
           <div key={review._id} className="p-6 hover:bg-gray-50 transition-colors">
             <div className="flex items-start gap-5">
-              {/* Product Image */}
               <div className="w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-200">
                 {review.productId?.mainImage?.url ? (
                   <img
@@ -109,7 +98,6 @@ export function ReviewsList({ reviews, onRespond, isResponding }: ReviewsListPro
               </div>
 
               <div className="flex-1 min-w-0">
-                {/* Review Header */}
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -145,12 +133,10 @@ export function ReviewsList({ reviews, onRespond, isResponding }: ReviewsListPro
                   </span>
                 </div>
 
-                {/* Review Comment */}
                 <div className="mb-4 text-sm text-gray-700 leading-relaxed">
                   {review.comment}
                 </div>
 
-                {/* Seller Response */}
                 {review.sellerResponse ? (
                   <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">

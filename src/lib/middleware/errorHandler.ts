@@ -33,11 +33,11 @@ function handleError(error: any): NextResponse {
 
   // Zod validation errors
   if (error instanceof ZodError) {
-    const validationErrors = error.errors.map(err => ({
+    const validationErrors = error.issues?.map(err => ({
       field: err.path.join('.'),
       message: err.message,
       code: err.code,
-    }));
+    })) || [];
 
     return NextResponse.json(
       {

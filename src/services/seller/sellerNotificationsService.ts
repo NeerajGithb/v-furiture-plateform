@@ -3,7 +3,7 @@ import {
   SellerNotification,
   NotificationsQuery,
   BulkNotificationAction
-} from "@/types/sellerNotifications";
+} from "@/types/seller/notifications";
 
 interface NotificationsResponse {
   notifications: SellerNotification[];
@@ -24,15 +24,12 @@ class SellerNotificationsService extends BasePrivateService {
 
   // Get notifications with pagination and filters
   async getNotifications(params: NotificationsQuery = {}): Promise<NotificationsResponse> {
-    const response = await this.get<NotificationsResponse>("/seller/notifications", params);
-
-    if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch notifications.",
-      );
-    }
+    const result = await this.getPaginated<any>("/seller/notifications", params);
+    
+    return {
+      notifications: result.data || [],
+      pagination: result.pagination
+    };
   }
 
   // Get unread count
@@ -44,19 +41,6 @@ class SellerNotificationsService extends BasePrivateService {
     } else {
       throw new Error(
         response.error?.message || "Failed to fetch unread count.",
-      );
-    }
-  }
-
-  // Get single notification by ID
-  async getNotificationById(notificationId: string): Promise<SellerNotification> {
-    const response = await this.get<{ notification: SellerNotification }>(`/seller/notifications/${notificationId}`);
-
-    if (response.success) {
-      return response.data!.notification;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch notification.",
       );
     }
   }

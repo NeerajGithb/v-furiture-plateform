@@ -1,46 +1,19 @@
-import { IAdminOrdersRepository, AdminOrder, OrderStats, OrderTrend } from "./IAdminOrdersRepository";
+import { IAdminOrdersRepository, AdminOrder, OrderStats } from "./IAdminOrdersRepository";
 import { AdminOrdersQueryRequest, OrderStatus, PaymentStatus } from "./AdminOrdersSchemas";
 import { PaginationResult } from "../../shared/types";
-import { RepositoryError } from "../../shared/InfrastructureError";
+import { getStartDateFromPeriod } from "../../shared/dateUtils";
 import Order from "@/models/Order";
 
 export class AdminOrdersRepository implements IAdminOrdersRepository {
-  async findById(id: string): Promise<AdminOrder | null> {
-    try {
-      const order = await Order.findById(id)
-        .populate("userId", "name email")
-        .populate("items.productId", "name")
-        .lean();
-
-      return order ? this.mapToAdminOrder(order) : null;
-    } catch (error) {
-      throw new RepositoryError("Failed to find order by ID", "findById", error as Error);
-    }
-  }
-
-  async findByOrderNumber(orderNumber: string): Promise<AdminOrder | null> {
-    try {
-      const order = await Order.findOne({ orderNumber })
-        .populate("userId", "name email")
-        .populate("items.productId", "name")
-        .lean();
-
-      return order ? this.mapToAdminOrder(order) : null;
-    } catch (error) {
-      throw new RepositoryError("Failed to find order by order number", "findByOrderNumber", error as Error);
-    }
-  }
-
   async findMany(query: AdminOrdersQueryRequest): Promise<PaginationResult<AdminOrder>> {
-    try {
-      const { 
-        page, limit, search, orderStatus, paymentStatus, sellerId, userId, 
-        startDate, endDate, sortBy, sortOrder, minAmount, maxAmount 
+      const {
+        period, page, limit, search, orderStatus, paymentStatus, sellerId, userId,
+        startDate, endDate, sortBy, sortOrder, minAmount, maxAmount
       } = query;
-      
+
       // Build filter
       const filter: any = {};
-      
+
       if (search) {
         filter.$or = [
           { orderNumber: { $regex: search, $options: "i" } },
@@ -48,18 +21,22 @@ export class AdminOrdersRepository implements IAdminOrdersRepository {
           { "shippingAddress.phone": { $regex: search, $options: "i" } },
         ];
       }
-      
+
       if (orderStatus) filter.orderStatus = orderStatus;
       if (paymentStatus) filter.paymentStatus = paymentStatus;
       if (sellerId) filter["items.sellerId"] = sellerId;
       if (userId) filter.userId = userId;
-      
-      if (startDate || endDate) {
+
+      // Handle period filter
+      if (period) {
+        const periodStartDate = getStartDateFromPeriod(period);
+        filter.createdAt = { $gte: periodStartDate };
+      } else if (startDate || endDate) {
         filter.createdAt = {};
         if (startDate) filter.createdAt.$gte = new Date(startDate);
         if (endDate) filter.createdAt.$lte = new Date(endDate);
       }
-      
+
       if (minAmount !== undefined || maxAmount !== undefined) {
         filter.totalAmount = {};
         if (minAmount !== undefined) filter.totalAmount.$gte = minAmount;
@@ -74,7 +51,14 @@ export class AdminOrdersRepository implements IAdminOrdersRepository {
       const [orders, total] = await Promise.all([
         Order.find(filter)
           .populate("userId", "name email")
-          .populate("items.productId", "name")
+          .populate({
+            path: "items.productId",
+            select: "name sku mainImage"
+          })
+          .populate({
+            path: "items.sellerId",
+            select: "businessName email"
+          })
           .sort(sort)
           .skip((page - 1) * limit)
           .limit(limit)
@@ -95,56 +79,21 @@ export class AdminOrdersRepository implements IAdminOrdersRepository {
           hasPrev: page > 1,
         },
       };
-    } catch (error) {
-      throw new RepositoryError("Failed to find orders", "findMany", error as Error);
-    }
   }
 
   async getStats(period: string): Promise<OrderStats> {
-    try {
-      const now = new Date();
-      let startDate: Date;
-
-      switch (period) {
-        case "7d":
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case "30d":
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        case "90d":
-          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-          break;
-        case "1y":
-          startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-          break;
-        default:
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      }
+      const startDate = getStartDateFromPeriod(period);
 
       const [
         statusStats,
-        paymentStats,
-        revenueStats,
-        recentOrders
+        revenueStats
       ] = await Promise.all([
         Order.aggregate([
           { $match: { createdAt: { $gte: startDate } } },
           {
             $group: {
               _id: "$orderStatus",
-              count: { $sum: 1 },
-              revenue: { $sum: "$totalAmount" }
-            }
-          }
-        ]),
-        Order.aggregate([
-          { $match: { createdAt: { $gte: startDate } } },
-          {
-            $group: {
-              _id: "$paymentStatus",
-              count: { $sum: 1 },
-              revenue: { $sum: "$totalAmount" }
+              count: { $sum: 1 }
             }
           }
         ]),
@@ -167,21 +116,14 @@ export class AdminOrdersRepository implements IAdminOrdersRepository {
               }
             }
           }
-        ]),
-        Order.find({ createdAt: { $gte: startDate } })
-          .populate("userId", "name")
-          .sort({ createdAt: -1 })
-          .limit(10)
-          .select("orderNumber userId totalAmount orderStatus createdAt")
-          .lean()
+        ])
       ]);
 
       const stats = revenueStats[0] || { total: 0, totalRevenue: 0, paidRevenue: 0, pendingRevenue: 0 };
       const avgOrderValue = stats.total > 0 ? stats.totalRevenue / stats.total : 0;
 
-      // Count by status
       const statusCounts = {
-        pending: 0, confirmed: 0, processing: 0, shipped: 0, 
+        pending: 0, confirmed: 0, processing: 0, shipped: 0,
         delivered: 0, cancelled: 0, returned: 0
       };
 
@@ -204,172 +146,27 @@ export class AdminOrdersRepository implements IAdminOrdersRepository {
         paidRevenue: stats.paidRevenue,
         pendingRevenue: stats.pendingRevenue,
         avgOrderValue,
-        byStatus: statusStats.map((stat: any) => ({
-          status: stat._id,
-          count: stat.count,
-          revenue: stat.revenue,
-        })),
-        byPaymentStatus: paymentStats.map((stat: any) => ({
-          status: stat._id,
-          count: stat.count,
-          revenue: stat.revenue,
-        })),
-        recentOrders: recentOrders.map((order: any) => ({
-          id: order._id.toString(),
-          orderNumber: order.orderNumber,
-          customerName: order.userId?.name || "Unknown",
-          totalAmount: order.totalAmount,
-          status: order.orderStatus,
-          createdAt: order.createdAt,
-        })),
       };
-    } catch (error) {
-      throw new RepositoryError("Failed to get order stats", "getStats", error as Error);
-    }
-  }
-
-  async getTrends(startDate: Date, endDate: Date, groupBy: string): Promise<OrderTrend[]> {
-    try {
-      const groupStage = this.buildGroupStage(groupBy);
-      
-      const trends = await Order.aggregate([
-        {
-          $match: {
-            createdAt: { $gte: startDate, $lte: endDate }
-          }
-        },
-        {
-          $group: {
-            _id: groupStage,
-            orders: { $sum: 1 },
-            revenue: { $sum: "$totalAmount" }
-          }
-        },
-        {
-          $addFields: {
-            avgOrderValue: { $divide: ["$revenue", "$orders"] }
-          }
-        },
-        { $sort: { "_id": 1 } }
-      ]);
-
-      return trends.map((trend: any) => ({
-        date: this.formatDateFromGroup(trend._id, groupBy),
-        orders: trend.orders,
-        revenue: trend.revenue,
-        avgOrderValue: trend.avgOrderValue,
-      }));
-    } catch (error) {
-      throw new RepositoryError("Failed to get order trends", "getTrends", error as Error);
-    }
-  }
-
-  async updateOrderStatus(orderId: string, status: OrderStatus, notes?: string): Promise<AdminOrder> {
-    try {
-      const updateData: any = { orderStatus: status, updatedAt: new Date() };
-      if (notes) updateData.notes = notes;
-      if (status === "delivered") updateData.deliveredAt = new Date();
-
-      const order = await Order.findByIdAndUpdate(
-        orderId,
-        updateData,
-        { new: true, runValidators: true }
-      )
-        .populate("userId", "name email")
-        .populate("items.productId", "name");
-
-      if (!order) {
-        throw new Error("Order not found");
-      }
-
-      return this.mapToAdminOrder(order.toObject());
-    } catch (error) {
-      throw new RepositoryError("Failed to update order status", "updateOrderStatus", error as Error);
-    }
-  }
-
-  async updatePaymentStatus(orderId: string, status: PaymentStatus, notes?: string): Promise<AdminOrder> {
-    try {
-      const updateData: any = { paymentStatus: status, updatedAt: new Date() };
-      if (notes) updateData.notes = notes;
-
-      const order = await Order.findByIdAndUpdate(
-        orderId,
-        updateData,
-        { new: true, runValidators: true }
-      )
-        .populate("userId", "name email")
-        .populate("items.productId", "name");
-
-      if (!order) {
-        throw new Error("Order not found");
-      }
-
-      return this.mapToAdminOrder(order.toObject());
-    } catch (error) {
-      throw new RepositoryError("Failed to update payment status", "updatePaymentStatus", error as Error);
-    }
-  }
-
-  async addTrackingNumber(orderId: string, trackingNumber: string): Promise<AdminOrder> {
-    try {
-      const order = await Order.findByIdAndUpdate(
-        orderId,
-        { trackingNumber, updatedAt: new Date() },
-        { new: true, runValidators: true }
-      )
-        .populate("userId", "name email")
-        .populate("items.productId", "name");
-
-      if (!order) {
-        throw new Error("Order not found");
-      }
-
-      return this.mapToAdminOrder(order.toObject());
-    } catch (error) {
-      throw new RepositoryError("Failed to add tracking number", "addTrackingNumber", error as Error);
-    }
-  }
-
-  async updateEstimatedDelivery(orderId: string, estimatedDelivery: Date): Promise<AdminOrder> {
-    try {
-      const order = await Order.findByIdAndUpdate(
-        orderId,
-        { estimatedDelivery, updatedAt: new Date() },
-        { new: true, runValidators: true }
-      )
-        .populate("userId", "name email")
-        .populate("items.productId", "name");
-
-      if (!order) {
-        throw new Error("Order not found");
-      }
-
-      return this.mapToAdminOrder(order.toObject());
-    } catch (error) {
-      throw new RepositoryError("Failed to update estimated delivery", "updateEstimatedDelivery", error as Error);
-    }
   }
 
   async exportOrders(query: AdminOrdersQueryRequest): Promise<AdminOrder[]> {
-    try {
       // Use the same filter logic but without pagination
       const { search, orderStatus, paymentStatus, sellerId, userId, startDate, endDate } = query;
-      
+
       const filter: any = {};
-      
+
       if (search) {
         filter.$or = [
           { orderNumber: { $regex: search, $options: "i" } },
           { "shippingAddress.fullName": { $regex: search, $options: "i" } },
         ];
       }
-      
+
       if (orderStatus) filter.orderStatus = orderStatus;
       if (paymentStatus) filter.paymentStatus = paymentStatus;
       if (sellerId) filter["items.sellerId"] = sellerId;
       if (userId) filter.userId = userId;
-      
+
       if (startDate || endDate) {
         filter.createdAt = {};
         if (startDate) filter.createdAt.$gte = new Date(startDate);
@@ -378,14 +175,18 @@ export class AdminOrdersRepository implements IAdminOrdersRepository {
 
       const orders = await Order.find(filter)
         .populate("userId", "name email")
-        .populate("items.productId", "name")
+        .populate({
+          path: "items.productId",
+          select: "name sku mainImage"
+        })
+        .populate({
+          path: "items.sellerId",
+          select: "businessName email"
+        })
         .sort({ createdAt: -1 })
         .lean();
 
       return orders.map(order => this.mapToAdminOrder(order));
-    } catch (error) {
-      throw new RepositoryError("Failed to export orders", "exportOrders", error as Error);
-    }
   }
 
   private mapToAdminOrder(order: any): AdminOrder {
@@ -398,65 +199,51 @@ export class AdminOrdersRepository implements IAdminOrdersRepository {
         email: order.userId?.email || "",
       },
       items: (order.items || []).map((item: any) => ({
-        productId: item.productId?._id?.toString() || item.productId?.id || item.productId,
-        productName: item.productId?.name || item.productName || "",
+        productId: {
+          id: item.productId?._id?.toString() || item.productId?.id || item.productId,
+          name: item.productId?.name || item.name || "",
+          sku: item.productId?.sku || item.selectedVariant?.sku || "",
+          mainImage: item.productId?.mainImage || item.productImage ? {
+            url: item.productId?.mainImage?.url || item.productId?.mainImage || item.productImage || "",
+            alt: item.productId?.mainImage?.alt || item.productId?.name || item.name || ""
+          } : undefined
+        },
         quantity: item.quantity || 0,
         price: item.price || 0,
-        sellerId: item.sellerId?.toString() || "",
-        sellerName: item.sellerName || "",
+        sellerId: {
+          id: item.sellerId?._id?.toString() || item.sellerId?.id || item.sellerId?.toString() || "",
+          businessName: item.sellerId?.businessName || "",
+          email: item.sellerId?.email || ""
+        }
       })),
       totalAmount: order.totalAmount || 0,
       orderStatus: order.orderStatus || "pending",
       paymentStatus: order.paymentStatus || "pending",
       paymentMethod: order.paymentMethod || "",
-      shippingAddress: order.shippingAddress || {},
+      shippingAddress: {
+        fullName: order.shippingAddress?.fullName || "",
+        phone: order.shippingAddress?.phone || "",
+        addressLine1: order.shippingAddress?.addressLine1 || "",
+        addressLine2: order.shippingAddress?.addressLine2,
+        city: order.shippingAddress?.city || "",
+        state: order.shippingAddress?.state || "",
+        postalCode: order.shippingAddress?.postalCode || "",
+        country: order.shippingAddress?.country || "India"
+      },
       billingAddress: order.billingAddress,
+      priceBreakdown: {
+        subtotal: order.subtotal || 0,
+        couponDiscount: order.discount || 0,
+        shipping: order.shippingCost || 0,
+        tax: order.tax || 0,
+        total: order.totalAmount || 0
+      },
       notes: order.notes,
       trackingNumber: order.trackingNumber,
-      estimatedDelivery: order.estimatedDelivery,
+      estimatedDelivery: order.expectedDeliveryDate,
       deliveredAt: order.deliveredAt,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
     };
-  }
-
-  private buildGroupStage(groupBy: string) {
-    switch (groupBy) {
-      case "day":
-        return {
-          year: { $year: "$createdAt" },
-          month: { $month: "$createdAt" },
-          day: { $dayOfMonth: "$createdAt" }
-        };
-      case "week":
-        return {
-          year: { $year: "$createdAt" },
-          week: { $week: "$createdAt" }
-        };
-      case "month":
-        return {
-          year: { $year: "$createdAt" },
-          month: { $month: "$createdAt" }
-        };
-      default:
-        return {
-          year: { $year: "$createdAt" },
-          month: { $month: "$createdAt" },
-          day: { $dayOfMonth: "$createdAt" }
-        };
-    }
-  }
-
-  private formatDateFromGroup(group: any, groupBy: string): string {
-    switch (groupBy) {
-      case "day":
-        return `${group.year}-${String(group.month).padStart(2, '0')}-${String(group.day).padStart(2, '0')}`;
-      case "week":
-        return `${group.year}-W${String(group.week).padStart(2, '0')}`;
-      case "month":
-        return `${group.year}-${String(group.month).padStart(2, '0')}`;
-      default:
-        return `${group.year}-${String(group.month).padStart(2, '0')}-${String(group.day).padStart(2, '0')}`;
-    }
   }
 }

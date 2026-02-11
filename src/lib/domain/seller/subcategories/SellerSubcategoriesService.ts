@@ -2,7 +2,10 @@ import { sellerSubcategoriesRepository } from "./SellerSubcategoriesRepository";
 import { SellerSubcategoriesQueryRequest } from "./SellerSubcategoriesSchemas";
 
 export class SellerSubcategoriesService {
-  async getSubcategories(query: SellerSubcategoriesQueryRequest = {}) {
+  async getSubcategories(query: SellerSubcategoriesQueryRequest = {
+    sortBy: 'name',
+    sortOrder: 'asc'
+  }) {
     let subcategories;
     
     if (query.categoryId) {

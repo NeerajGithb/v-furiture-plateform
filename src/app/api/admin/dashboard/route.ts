@@ -12,15 +12,24 @@ export const GET = withAdminAuth(
       async (request: NextRequest, _admin: AuthenticatedAdmin) => {
         const { searchParams } = new URL(request.url);
 
-        // Convert searchParams to object for Zod validation
-        const queryParams: Record<string, string> = {};
-        searchParams.forEach((value, key) => {
-          queryParams[key] = value;
-        });
+        const globalPeriod = searchParams.get('period');
+        
+        const queryParams: any = {
+          refresh: searchParams.get('refresh') || 'false',
+        };
 
-        // Validate query parameters
+        if (globalPeriod) {
+          queryParams.overview = { period: globalPeriod };
+          queryParams.orders = { period: globalPeriod };
+          queryParams.users = { period: globalPeriod };
+          queryParams.products = { period: globalPeriod };
+          queryParams.sellers = { period: globalPeriod };
+          queryParams.payments = { period: globalPeriod };
+          queryParams.reviews = { period: globalPeriod };
+          queryParams.sales = { period: globalPeriod };
+        }
+
         const validatedQuery = AdminDashboardQuerySchema.parse(queryParams);
-
         const dashboardStats = await adminDashboardService.getDashboardStats(validatedQuery);
         return ApiResponseBuilder.success(dashboardStats);
       },

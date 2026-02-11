@@ -1,17 +1,12 @@
 import { useState } from 'react';
 import { AlertCircle } from 'lucide-react';
-
-interface CancelOrderModalProps {
-  updating: boolean;
-  onConfirm: (reason: string) => Promise<void>;
-  onCancel: () => void;
-}
+import { CancelOrderModalProps } from '@/types/seller/orders';
 
 export function CancelOrderModal({ updating, onConfirm, onCancel }: CancelOrderModalProps) {
   const [cancelReason, setCancelReason] = useState('');
 
-  const handleConfirm = async () => {
-    await onConfirm(cancelReason);
+  const handleConfirm = () => {
+    onConfirm(cancelReason);
     setCancelReason('');
   };
 

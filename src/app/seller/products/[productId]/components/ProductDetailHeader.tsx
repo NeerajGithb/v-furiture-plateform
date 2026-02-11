@@ -1,7 +1,8 @@
 import { ArrowLeft, Edit, Copy, Trash2, Eye, MoreVertical } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from '@/components/NavigationLoader';
-import { SellerProduct } from '@/types/sellerProducts';
+import { useConfirm } from '@/contexts/ConfirmContext';
+import { SellerProduct } from '@/types/seller/products';
 
 interface ProductDetailHeaderProps {
   product: SellerProduct;
@@ -21,8 +22,8 @@ export function ProductDetailHeader({
   isUpdating
 }: ProductDetailHeaderProps) {
   const router = useNavigate();
+  const { confirm } = useConfirm();
   const [showActions, setShowActions] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -41,9 +42,17 @@ export function ProductDetailHeader({
     }
   };
 
-  const handleDeleteConfirm = () => {
-    onDeleteProduct();
-    setShowDeleteConfirm(false);
+  const handleDelete = () => {
+    confirm({
+      title: 'Delete Product',
+      message: `Are you sure you want to delete "${product.name}"? This action cannot be undone.`,
+      type: 'delete',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        onDeleteProduct();
+      }
+    });
   };
 
   return (
@@ -90,7 +99,7 @@ export function ProductDetailHeader({
                   <button
                     onClick={() => {
                       // Open product in new tab (client view)
-                      window.open(`/products/${product._id}`, '_blank');
+                      window.open(`/products/${product.id}`, '_blank');
                       setShowActions(false);
                     }}
                     className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -122,7 +131,7 @@ export function ProductDetailHeader({
                   </button>
                   <button
                     onClick={() => {
-                      setShowDeleteConfirm(true);
+                      handleDelete();
                       setShowActions(false);
                     }}
                     className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
@@ -136,11 +145,16 @@ export function ProductDetailHeader({
           </div>
         </div>
 
-        {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           <div className="bg-gray-50 rounded-lg p-3">
             <p className="text-sm font-medium text-gray-600">Price</p>
-            <p className="text-lg font-bold text-gray-900">${product.finalPrice}</p>
+            <p className="text-lg font-bold text-gray-900">
+              {new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                minimumFractionDigits: 2,
+              }).format(product.finalPrice)}
+            </p>
           </div>
           <div className="bg-gray-50 rounded-lg p-3">
             <p className="text-sm font-medium text-gray-600">Stock</p>
@@ -156,33 +170,6 @@ export function ProductDetailHeader({
           </div>
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Product</h3>
-            <p className="text-gray-600 mb-4">
-              Are you sure you want to delete "{product.name}"? This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                disabled={isUpdating}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-              >
-                {isUpdating ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

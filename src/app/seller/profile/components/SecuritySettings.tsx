@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Lock, Eye, EyeOff, Save } from 'lucide-react';
-import { ChangePasswordRequest } from '@/types/sellerProfile';
+import { ChangePasswordRequest } from '@/types/seller/profile';
 import toast from 'react-hot-toast';
 
 interface SecuritySettingsProps {

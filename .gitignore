@@ -40,5 +40,15 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# scripts (admin creation, etc)
+# scripts (admin creation, migration scripts, etc)
 /scripts
+
+# audits and documentation (internal development notes)
+/audits
+
+# development guides (can be committed if needed for team)
+# Backend-guide.MD
+# Frontend-guide-NEW.MD
+
+# utility scripts
+clear-redis-cache.js

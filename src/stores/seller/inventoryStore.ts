@@ -1,14 +1,27 @@
 import { create } from 'zustand';
-import { InventoryUIState } from '@/types/sellerInventory';
+
+interface InventoryUIState {
+  editingStock: { [productId: string]: number };
+  editingReorderLevel: { [productId: string]: number };
+  showFilters: boolean;
+  currentPage: number;
+  setEditingStock: (productId: string, value: number) => void;
+  clearEditingStock: (productId: string) => void;
+  clearAllEditingStock: () => void;
+  setEditingReorderLevel: (productId: string, value: number) => void;
+  clearEditingReorderLevel: (productId: string) => void;
+  clearAllEditingReorderLevel: () => void;
+  setShowFilters: (show: boolean) => void;
+  setCurrentPage: (page: number) => void;
+  resetState: () => void;
+}
 
 export const useInventoryStore = create<InventoryUIState>((set, get) => ({
-  // Initial state
   editingStock: {},
   editingReorderLevel: {},
-  selectedItems: [],
   showFilters: false,
+  currentPage: 1,
   
-  // Stock editing actions
   setEditingStock: (productId: string, value: number) => {
     set((state) => ({
       editingStock: {
@@ -30,7 +43,6 @@ export const useInventoryStore = create<InventoryUIState>((set, get) => ({
     set({ editingStock: {} });
   },
   
-  // Reorder level editing actions
   setEditingReorderLevel: (productId: string, value: number) => {
     set((state) => ({
       editingReorderLevel: {
@@ -52,35 +64,20 @@ export const useInventoryStore = create<InventoryUIState>((set, get) => ({
     set({ editingReorderLevel: {} });
   },
   
-  // Selection actions
-  toggleItemSelection: (productId: string) => {
-    set((state) => ({
-      selectedItems: state.selectedItems.includes(productId)
-        ? state.selectedItems.filter(id => id !== productId)
-        : [...state.selectedItems, productId]
-    }));
-  },
-  
-  selectAllItems: (productIds: string[]) => {
-    set({ selectedItems: productIds });
-  },
-  
-  clearSelection: () => {
-    set({ selectedItems: [] });
-  },
-  
-  // UI actions
   setShowFilters: (show: boolean) => {
     set({ showFilters: show });
   },
   
-  // Reset all state
+  setCurrentPage: (page: number) => {
+    set({ currentPage: page });
+  },
+  
   resetState: () => {
     set({
       editingStock: {},
       editingReorderLevel: {},
-      selectedItems: [],
-      showFilters: false
+      showFilters: false,
+      currentPage: 1
     });
   }
 }));

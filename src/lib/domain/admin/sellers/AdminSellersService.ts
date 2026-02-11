@@ -3,7 +3,8 @@ import { AdminSellersRepository } from "./AdminSellersRepository";
 import { 
   AdminSellersQueryRequest,
   SellerStatusUpdateRequest,
-  SellerVerificationUpdateRequest
+  SellerVerificationUpdateRequest,
+  SellerStatsQueryRequest
 } from "./AdminSellersSchemas";
 import {
   SellerNotFoundError,
@@ -19,72 +20,43 @@ export class AdminSellersService {
   ) {}
 
   async getSellers(query: AdminSellersQueryRequest): Promise<PaginationResult<AdminSeller>> {
-    try {
-      return await this.repository.findMany(query);
-    } catch (error) {
-      throw new SellerOperationError("getSellers", (error as Error).message);
-    }
+    return await this.repository.findMany(query);
   }
 
-  async getSellerStats(period: string = "30d"): Promise<SellerStats> {
-    try {
-      return await this.repository.getStats(period);
-    } catch (error) {
-      throw new SellerOperationError("getSellerStats", (error as Error).message);
-    }
+  async getSellerStats(query: SellerStatsQueryRequest): Promise<SellerStats> {
+    return await this.repository.getStats(query.period);
   }
 
   async getSellerById(id: string): Promise<AdminSeller> {
-    try {
-      const seller = await this.repository.findById(id);
-      if (!seller) {
-        throw new SellerNotFoundError(id);
-      }
-      return seller;
-    } catch (error) {
-      if (error instanceof SellerNotFoundError) {
-        throw error;
-      }
-      throw new SellerOperationError("getSellerById", (error as Error).message);
+    const seller = await this.repository.findById(id);
+    if (!seller) {
+      throw new SellerNotFoundError(id);
     }
+    return seller;
   }
 
   async updateSellerStatus(request: SellerStatusUpdateRequest): Promise<AdminSeller> {
-    try {
-      const seller = await this.repository.findById(request.sellerId);
-      if (!seller) {
-        throw new SellerNotFoundError(request.sellerId);
-      }
-
-      this.validateStatusTransition(seller.status, request.status);
-
-      return await this.repository.updateStatus(
-        request.sellerId, 
-        request.status, 
-        request.reason
-      );
-    } catch (error) {
-      if (error instanceof SellerNotFoundError || error instanceof SellerStatusError) {
-        throw error;
-      }
-      throw new SellerOperationError("updateSellerStatus", (error as Error).message);
+    const seller = await this.repository.findById(request.sellerId);
+    if (!seller) {
+      throw new SellerNotFoundError(request.sellerId);
     }
+
+    this.validateStatusTransition(seller.status, request.status);
+
+    return await this.repository.updateStatus(
+      request.sellerId, 
+      request.status, 
+      request.reason
+    );
   }
 
   async updateSellerVerification(request: SellerVerificationUpdateRequest): Promise<AdminSeller> {
-    try {
-      const seller = await this.repository.findById(request.sellerId);
-      if (!seller) {
-        throw new SellerNotFoundError(request.sellerId);
-      }
-
-      return await this.repository.updateVerification(request.sellerId, request.verified);
-    } catch (error) {
-      if (error instanceof SellerNotFoundError) {
-        throw error;
-      }
-      throw new SellerOperationError("updateSellerVerification", (error as Error).message);
+    const seller = await this.repository.findById(request.sellerId);
+    if (!seller) {
+      throw new SellerNotFoundError(request.sellerId);
     }
+
+    return await this.repository.updateVerification(request.sellerId, request.verified);
   }
 
   private validateStatusTransition(currentStatus: string, newStatus: string): void {

@@ -5,18 +5,16 @@ import {
   TrendingUp, 
   TrendingDown, 
   BarChart3, 
-  PieChart, 
-  Calendar,
+  PieChart,
   Package,
   IndianRupee,
   ShoppingCart,
-  Users,
   Target
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
-import { EarningsAnalyticsProps } from '@/types/sellerEarnings';
+import { EarningsAnalyticsProps } from '@/types/seller/earnings';
 
-export default function EarningsAnalytics({ analytics, period, onPeriodChange }: EarningsAnalyticsProps) {
+export default function EarningsAnalytics({ analytics }: EarningsAnalyticsProps) {
   const [activeChart, setActiveChart] = useState<'revenue' | 'orders' | 'categories'>('revenue');
 
   if (!analytics) {
@@ -42,22 +40,8 @@ export default function EarningsAnalytics({ analytics, period, onPeriodChange }:
 
   return (
     <div className="space-y-6">
-      {/* Period Selector */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Analytics Dashboard</h3>
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-gray-500" />
-          <select
-            value={period}
-            onChange={(e) => onPeriodChange(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="7days">Last 7 days</option>
-            <option value="30days">Last 30 days</option>
-            <option value="90days">Last 90 days</option>
-            <option value="1year">Last year</option>
-          </select>
-        </div>
       </div>
 
       {/* Key Metrics */}

@@ -1,20 +1,20 @@
 import { BasePrivateService } from "../baseService";
 import { 
+  AdminAnalyticsQueryRequest,
   AdminAnalyticsData,
-  AdminAnalyticsQuery
-} from "@/types/analytics";
+  AnalyticsExportRequest
+} from "@/types/admin/analytics";
 
 class AdminAnalyticsService extends BasePrivateService {
   constructor() {
     super("/api");
   }
 
-  // Get analytics data
-  async getAnalyticsData(params: AdminAnalyticsQuery = {}): Promise<AdminAnalyticsData> {
+  async getAnalyticsData(params: Partial<AdminAnalyticsQueryRequest> = {}): Promise<AdminAnalyticsData> {
     const response = await this.get<AdminAnalyticsData>("/admin/analytics", params);
 
     if (response.success) {
-      return response.data!;
+      return response.data as AdminAnalyticsData;
     } else {
       throw new Error(
         response.error?.message || "Failed to fetch analytics data.",
@@ -22,12 +22,11 @@ class AdminAnalyticsService extends BasePrivateService {
     }
   }
 
-  // Export analytics data
-  async exportAnalyticsData(options: any): Promise<any> {
+  async exportAnalyticsData(options: Partial<AnalyticsExportRequest>): Promise<Blob> {
     const response = await this.get("/admin/analytics", { action: "export", ...options });
 
     if (response.success) {
-      return response.data!;
+      return new Blob([JSON.stringify(response.data)], { type: 'application/json' });
     } else {
       throw new Error(
         response.error?.message || "Failed to export analytics data.",
@@ -36,5 +35,4 @@ class AdminAnalyticsService extends BasePrivateService {
   }
 }
 
-// Export singleton instance
 export const adminAnalyticsService = new AdminAnalyticsService();

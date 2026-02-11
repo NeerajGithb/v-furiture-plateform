@@ -1,12 +1,16 @@
 import { create } from 'zustand';
-import { OrderUIState } from '@/types/order';
+
+interface OrderUIState {
+  expandedOrder: string | null;
+  currentPage: number;
+  setExpandedOrder: (orderId: string | null) => void;
+  setCurrentPage: (page: number) => void;
+}
 
 export const useOrderUIStore = create<OrderUIState>((set) => ({
-  // Initial state
   expandedOrder: null,
-  activeTab: 'all',
+  currentPage: 1,
   
-  // Actions
   setExpandedOrder: (orderId) => set({ expandedOrder: orderId }),
-  setActiveTab: (tab) => set({ activeTab: tab }),
+  setCurrentPage: (page) => set({ currentPage: page }),
 }));

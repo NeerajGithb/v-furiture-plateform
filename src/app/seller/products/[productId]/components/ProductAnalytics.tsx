@@ -1,5 +1,5 @@
 import { TrendingUp, Eye, ShoppingCart, DollarSign } from 'lucide-react';
-import { SellerProduct } from '@/types/sellerProducts';
+import { SellerProduct } from '@/types/seller/products';
 
 interface ProductAnalyticsProps {
   product: SellerProduct;
@@ -24,7 +24,6 @@ interface ProductAnalyticsProps {
 }
 
 export function ProductAnalytics({ product, analytics }: ProductAnalyticsProps) {
-  // Calculate totals from analytics data
   const totalViews = analytics?.views.reduce((sum, item) => sum + item.count, 0) || 0;
   const totalSales = analytics?.sales.reduce((sum, item) => sum + item.count, 0) || 0;
   const totalRevenue = analytics?.sales.reduce((sum, item) => sum + item.revenue, 0) || 0;
@@ -32,7 +31,6 @@ export function ProductAnalytics({ product, analytics }: ProductAnalyticsProps) 
 
   return (
     <div className="space-y-6">
-      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-blue-50 rounded-lg p-4">
           <div className="flex items-center gap-3">
@@ -59,7 +57,13 @@ export function ProductAnalytics({ product, analytics }: ProductAnalyticsProps) 
             <DollarSign className="w-8 h-8 text-purple-600" />
             <div>
               <p className="text-sm font-medium text-purple-600">Revenue</p>
-              <p className="text-2xl font-bold text-purple-900">${totalRevenue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-purple-900">
+                {new Intl.NumberFormat('en-IN', {
+                  style: 'currency',
+                  currency: 'INR',
+                  minimumFractionDigits: 0,
+                }).format(totalRevenue)}
+              </p>
             </div>
           </div>
         </div>
@@ -75,7 +79,6 @@ export function ProductAnalytics({ product, analytics }: ProductAnalyticsProps) 
         </div>
       </div>
 
-      {/* Charts Placeholder */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Views Over Time</h3>
@@ -92,7 +95,6 @@ export function ProductAnalytics({ product, analytics }: ProductAnalyticsProps) 
         </div>
       </div>
 
-      {/* Performance Insights */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Insights</h3>
         <div className="space-y-4">
@@ -112,7 +114,14 @@ export function ProductAnalytics({ product, analytics }: ProductAnalyticsProps) 
               <p className="text-sm text-gray-600">Revenue per sale</p>
             </div>
             <p className="text-xl font-bold text-gray-900">
-              ${totalSales > 0 ? (totalRevenue / totalSales).toFixed(2) : '0.00'}
+              {totalSales > 0 
+                ? new Intl.NumberFormat('en-IN', {
+                    style: 'currency',
+                    currency: 'INR',
+                    minimumFractionDigits: 2,
+                  }).format(totalRevenue / totalSales)
+                : '₹0.00'
+              }
             </p>
           </div>
 
@@ -134,7 +143,6 @@ export function ProductAnalytics({ product, analytics }: ProductAnalyticsProps) 
         </div>
       </div>
 
-      {/* Recommendations */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-blue-900 mb-4">Recommendations</h3>
         <div className="space-y-3">

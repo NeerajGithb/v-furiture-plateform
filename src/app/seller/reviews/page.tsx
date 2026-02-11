@@ -1,42 +1,21 @@
-'use client';
-
-import { useState } from 'react';
-import { useGlobalFilterStore } from '@/stores/globalFilterStore';
+"use client"
+import { useReviewsUIStore } from '@/stores/seller/reviewsUIStore';
 import { 
   useSellerReviews, 
   useRespondToReview,
   useExportSellerReviews
 } from '@/hooks/seller/useSellerReviews';
-import { ReviewStatus, ReviewRating } from '@/types/sellerReview';
-import { ReviewsSkeleton } from './components/ReviewsSkeleton';
-import { ReviewsHeader } from './components/ReviewsHeader';
-import { ReviewsFilters } from './components/ReviewsFilters';
+import { LoaderGuard } from '@/components/ui/LoaderGuard';
+import { Pagination } from '@/components/ui/Pagination';
+import PageHeader from '@/components/PageHeader';
+import { ReviewsStats } from './components/ReviewsStats';
 import { ReviewsList } from './components/ReviewsList';
-import { ReviewsPagination } from './components/ReviewsPagination';
 
 export default function SellerReviewsPage() {
-  const [ratingFilter, setRatingFilter] = useState('all');
-  const [refreshing, setRefreshing] = useState(false);
+  const currentPage = useReviewsUIStore(s => s.currentPage);
+  const setCurrentPage = useReviewsUIStore(s => s.setCurrentPage);
 
-  // Global filters
-  const { 
-    search: globalSearch,
-    status: statusFilter,
-    page,
-    setStatus: setStatusFilter,
-    setPage,
-    clearFilters
-  } = useGlobalFilterStore();
-
-  // React Query hooks
-  const { data: reviewsData, isLoading, refetch } = useSellerReviews({
-    page,
-    limit: 20,
-    search: globalSearch,
-    status: statusFilter !== 'all' ? (statusFilter as ReviewStatus) : undefined,
-    rating: ratingFilter !== 'all' ? (parseInt(ratingFilter) as ReviewRating) : undefined
-  });
-
+  const { data: reviewsData, isPending, error, refetch, isFetching } = useSellerReviews();
   const respondToReview = useRespondToReview();
   const exportReviews = useExportSellerReviews();
 
@@ -44,19 +23,8 @@ export default function SellerReviewsPage() {
   const pagination = reviewsData?.pagination;
   const stats = reviewsData?.stats;
 
-  // Handlers
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await refetch();
-    setTimeout(() => setRefreshing(false), 500);
-  };
-
   const handleExport = async () => {
-    await exportReviews.mutateAsync({
-      status: statusFilter !== 'all' ? (statusFilter as ReviewStatus) : undefined,
-      rating: ratingFilter !== 'all' ? (parseInt(ratingFilter) as ReviewRating) : undefined,
-      search: globalSearch
-    });
+    await exportReviews.mutateAsync({});
   };
 
   const handleRespond = async (reviewId: string, message: string) => {
@@ -66,47 +34,49 @@ export default function SellerReviewsPage() {
     });
   };
 
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-  };
-
   return (
     <>
-      {isLoading && <ReviewsSkeleton />}
-      {!isLoading && (
-        <div className="space-y-6 max-w-7xl mx-auto p-6">
-          <ReviewsHeader 
-            stats={stats}
-            onExport={handleExport}
-            onRefresh={handleRefresh}
-            isExporting={exportReviews.isPending}
-            refreshing={refreshing}
-          />
+      <PageHeader
+        title="Reviews"
+        description="Manage feedback from your customers"
+        onRefresh={refetch}
+        isRefreshing={isFetching}
+        actions={
+          <button
+            onClick={handleExport}
+            disabled={exportReviews.isPending}
+            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 font-medium"
+          >
+            {exportReviews.isPending ? 'Exporting...' : 'Export'}
+          </button>
+        }
+      />
 
-          <ReviewsFilters
-            statusFilter={statusFilter || 'all'}
-            ratingFilter={ratingFilter}
-            onStatusChange={setStatusFilter}
-            onRatingChange={setRatingFilter}
-          />
+      <LoaderGuard 
+        isLoading={isPending} 
+        error={error}
+        isEmpty={!reviewsData || (reviewsData.pagination?.total || 0) === 0}
+        emptyMessage="No reviews"
+      >
+        {() => (
+          <div className="space-y-6 max-w-7xl mx-auto">
+            <ReviewsStats stats={stats} />
 
-          <ReviewsList
-            reviews={reviews}
-            onRespond={handleRespond}
-            isResponding={respondToReview.isPending}
-          />
-
-          {pagination && pagination.totalPages > 1 && (
-            <ReviewsPagination
-              currentPage={pagination.page}
-              totalPages={pagination.totalPages}
-              totalItems={pagination.total}
-              itemsPerPage={pagination.limit}
-              onPageChange={handlePageChange}
+            <ReviewsList
+              reviews={reviews}
+              onRespond={handleRespond}
+              isResponding={respondToReview.isPending}
             />
-          )}
-        </div>
-      )}
+
+            {pagination && pagination.totalPages > 1 && (
+              <Pagination
+                pagination={pagination}
+                onPageChange={setCurrentPage}
+              />
+            )}
+          </div>
+        )}
+      </LoaderGuard>
     </>
   );
 }

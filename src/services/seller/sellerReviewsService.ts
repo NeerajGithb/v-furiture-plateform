@@ -2,9 +2,8 @@ import { BasePrivateService } from "../baseService";
 import { 
   SellerReview,
   ReviewsQuery,
-  RespondToReviewRequest,
-  ReportReviewRequest
-} from "@/types/sellerReview";
+  RespondToReviewRequest
+} from "@/types/seller/reviews";
 
 interface ReviewsResponse {
   reviews: SellerReview[];
@@ -31,12 +30,29 @@ class SellerReviewsService extends BasePrivateService {
     super("/api");
   }
 
-  // Get reviews with pagination and filters
   async getReviews(params: ReviewsQuery = {}): Promise<ReviewsResponse> {
-    const response = await this.get<ReviewsResponse>("/seller/reviews", params);
+    const response: any = await this.get("/seller/reviews", params);
 
     if (response.success) {
-      return response.data!;
+      return {
+        reviews: response.data || [],
+        stats: response.meta?.stats || {
+          totalReviews: 0,
+          averageRating: 0,
+          breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+          pendingReviews: 0,
+          responseRate: 0,
+          averageResponseTime: 0
+        },
+        pagination: {
+          page: response.pagination?.page || 1,
+          limit: response.pagination?.limit || 20,
+          total: response.pagination?.total || 0,
+          totalPages: response.pagination?.totalPages || 0,
+          hasNext: response.pagination?.hasNext || false,
+          hasPrev: response.pagination?.hasPrev || false,
+        },
+      };
     } else {
       throw new Error(
         response.error?.message || "Failed to fetch reviews.",
@@ -44,15 +60,14 @@ class SellerReviewsService extends BasePrivateService {
     }
   }
 
-  // Export reviews
   async exportReviews(params: ReviewsQuery = {}): Promise<SellerReview[]> {
-    const response = await this.get<{ reviews: SellerReview[] }>("/seller/reviews", { 
+    const response: any = await this.get("/seller/reviews", { 
       action: "export", 
       ...params 
     });
 
     if (response.success) {
-      return response.data!.reviews;
+      return response.data?.reviews || [];
     } else {
       throw new Error(
         response.error?.message || "Failed to export reviews.",
@@ -60,20 +75,6 @@ class SellerReviewsService extends BasePrivateService {
     }
   }
 
-  // Get single review by ID
-  async getReviewById(reviewId: string): Promise<SellerReview> {
-    const response = await this.get<{ review: SellerReview }>(`/seller/reviews/${reviewId}`);
-
-    if (response.success) {
-      return response.data!.review;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch review.",
-      );
-    }
-  }
-
-  // Respond to review
   async respondToReview(reviewId: string, data: RespondToReviewRequest): Promise<SellerReview> {
     const response = await this.patch<{ review: SellerReview }>(`/seller/reviews/${reviewId}`, {
       action: "respond",
@@ -88,21 +89,6 @@ class SellerReviewsService extends BasePrivateService {
       );
     }
   }
-
-  // Report review
-  async reportReview(reviewId: string, data: ReportReviewRequest): Promise<void> {
-    const response = await this.patch(`/seller/reviews/${reviewId}`, {
-      action: "report",
-      ...data,
-    });
-
-    if (!response.success) {
-      throw new Error(
-        response.error?.message || "Failed to report review.",
-      );
-    }
-  }
 }
 
-// Export singleton instance
 export const sellerReviewsService = new SellerReviewsService();

@@ -85,6 +85,14 @@ export const POST = withAdminAuth(
             const rejectedProduct = await adminProductsService.rejectProduct(rejectData);
             return ApiResponseBuilder.success(rejectedProduct);
 
+          case "publish":
+            const publishedProduct = await adminProductsService.updateProductPublishStatus(id, true);
+            return ApiResponseBuilder.success(publishedProduct);
+
+          case "unpublish":
+            const unpublishedProduct = await adminProductsService.updateProductPublishStatus(id, false);
+            return ApiResponseBuilder.success(unpublishedProduct);
+
           default:
             return ApiResponseBuilder.badRequest("Invalid action specified");
         }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PeriodSchema, GroupBySchema } from "../../shared/commonSchemas";
 
 // Product status enum
 export const ProductStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED"]);
@@ -10,6 +11,7 @@ export const AdminProductsQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(100).default(10),
   search: z.string().optional(),
   status: ProductStatusSchema.optional(),
+  period: PeriodSchema.optional(),
   sellerId: z.string().optional(),
   categoryId: z.string().optional(),
   subCategoryId: z.string().optional(),
@@ -18,7 +20,7 @@ export const AdminProductsQuerySchema = z.object({
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
-});
+}).partial().default({});
 
 // Product update schemas
 export const ProductApprovalSchema = z.object({
@@ -44,8 +46,8 @@ export const BulkProductDeleteSchema = z.object({
 
 // Product stats schema
 export const ProductStatsQuerySchema = z.object({
-  period: z.enum(["7d", "30d", "90d", "1y"]).default("30d"),
-  groupBy: z.enum(["day", "week", "month"]).default("day"),
+  period: PeriodSchema.default("30d"),
+  groupBy: GroupBySchema.default("day"),
 });
 
 // Type exports

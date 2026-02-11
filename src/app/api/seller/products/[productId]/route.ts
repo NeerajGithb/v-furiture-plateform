@@ -40,9 +40,9 @@ export const PATCH = withSellerAuth(
         const body = await request.json();
         
         const validatedData = UpdateProductSchema.parse(body);
-        await sellerProductsService.updateProduct(productId, seller.id, validatedData);
+        const product = await sellerProductsService.updateProduct(productId, seller.id, validatedData);
         
-        return ApiResponseBuilder.success({}, { message: 'Product updated successfully' });
+        return ApiResponseBuilder.success({ product }, { message: 'Product updated successfully' });
       },
     ),
   ),
@@ -68,6 +68,25 @@ export const POST = withSellerAuth(
               { isPublished },
               { message: `Product ${isPublished ? 'published' : 'unpublished'} successfully` }
             );
+
+          case "duplicate":
+            const product = await sellerProductsService.duplicateProduct(productId, seller.id);
+            return ApiResponseBuilder.success({ product }, { message: 'Product duplicated successfully' });
+
+          case "analytics":
+            const { period } = body;
+            const analytics = await sellerProductsService.getProductAnalytics(productId, seller.id, period);
+            return ApiResponseBuilder.success({ analytics });
+
+          case "get_reviews":
+            const { page = 1, limit = 10 } = body;
+            const reviewsData = await sellerProductsService.getProductReviews(productId, seller.id, page, limit);
+            return ApiResponseBuilder.success(reviewsData);
+
+          case "update_inventory":
+            const { quantity } = body;
+            const result = await sellerProductsService.updateProductInventory(productId, seller.id, quantity);
+            return ApiResponseBuilder.success(result);
 
           default:
             return ApiResponseBuilder.badRequest("Invalid action specified");

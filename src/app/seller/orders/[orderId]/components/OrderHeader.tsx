@@ -1,13 +1,13 @@
 import { ArrowLeft, CheckCircle, Clock, Package, Truck, XCircle, Printer, Download, Mail, Phone, Copy, ExternalLink } from 'lucide-react';
-import { OrderHeaderProps, SellerOrderStatus } from '@/types/sellerOrder';
+import { OrderHeaderProps, SellerOrderStatus } from '@/types/seller/orders';
 import { formatCurrency } from '@/utils/currency';
 import { useState } from 'react';
 
 export function OrderHeader({ order, updating, onBack, onStatusChange, onPrint, onCancel }: OrderHeaderProps) {
   const [copied, setCopied] = useState(false);
 
-  const getStatusColor = (status: string) => {
-    const colors: any = {
+  const getStatusColor = (status: string): string => {
+    const colors: Record<string, string> = {
       pending: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20',
       confirmed: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20',
       processing: 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-600/20',
@@ -20,7 +20,7 @@ export function OrderHeader({ order, updating, onBack, onStatusChange, onPrint, 
   };
 
   const getStatusIcon = (status: string) => {
-    const icons: any = {
+    const icons: Record<string, React.ComponentType<{ className?: string }>> = {
       pending: Clock,
       confirmed: CheckCircle,
       processing: Package,
@@ -180,7 +180,7 @@ export function OrderHeader({ order, updating, onBack, onStatusChange, onPrint, 
             </button>
 
             <button
-              onClick={() => window.open(`/seller/orders/${order._id}/invoice`, '_blank')}
+              onClick={() => window.open(`/seller/orders/${order.id}/invoice`, '_blank')}
               className="px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2 text-sm font-medium"
             >
               <Download className="w-4 h-4" />

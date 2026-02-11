@@ -1,10 +1,9 @@
 import React from 'react';
 import {
-  Clock, CheckCircle, XCircle, Package, Truck, RefreshCw,
-  ChevronDown, ChevronUp, User, Phone, MapPin, CreditCard,
-  Calendar, FileText, Eye, History
+  Clock, CheckCircle, XCircle, Package, Truck,
+  ChevronDown, ChevronUp, MapPin, CreditCard
 } from 'lucide-react';
-import { OrdersTableProps } from '@/types/order';
+import { OrdersTableProps } from '@/types/admin/orders';
 import { formatCurrency } from '@/utils/currency';
 
 export default function OrdersTable({
@@ -81,17 +80,6 @@ export default function OrdersTable({
     }
   };
 
-  if (orders.length === 0) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="p-12 text-center">
-          <p className="text-gray-900 font-medium">No orders found</p>
-          <p className="text-gray-500 text-sm mt-1">Try adjusting your search or filters</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <div className="overflow-x-auto">
@@ -109,7 +97,7 @@ export default function OrdersTable({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {orders.map((order) => (
-              <React.Fragment key={order._id}>
+              <React.Fragment key={order.id}>
                 <tr className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex flex-col">
@@ -139,10 +127,10 @@ export default function OrdersTable({
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <button
-                      onClick={() => onToggleExpand(order._id)}
+                      onClick={() => onToggleExpand(order.id)}
                       className="p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 hover:text-gray-900"
                     >
-                      {expandedOrder === order._id ? (
+                      {expandedOrder === order.id ? (
                         <ChevronUp className="w-4 h-4" />
                       ) : (
                         <ChevronDown className="w-4 h-4" />
@@ -150,12 +138,11 @@ export default function OrdersTable({
                     </button>
                   </td>
                 </tr>
-                {expandedOrder === order._id && (
+                {expandedOrder === order.id && (
                   <tr>
                     <td colSpan={7} className="px-0 py-0 bg-gray-50 border-b border-gray-200">
                       <div className="p-6">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                          {/* Order Items */}
                           <div className="lg:col-span-2 space-y-4">
                             <div className="bg-white rounded-lg p-4 border border-gray-200">
                               <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
@@ -163,32 +150,42 @@ export default function OrdersTable({
                                 Order Details
                               </h3>
                               <div className="space-y-3">
-                                {order.items?.map((item, index: number) => (
-                                  <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                {order.items?.map((item: any, index: number) => (
+                                  <div key={`${order.id}-item-${index}`} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                                     {item.productId?.mainImage?.url ? (
                                       <img
                                         src={item.productId.mainImage.url}
                                         alt={item.productId.mainImage.alt || item.productId.name}
-                                        className="w-12 h-12 object-cover rounded bg-white border border-gray-200"
+                                        className="w-16 h-16 object-cover rounded bg-white border border-gray-200 flex-shrink-0"
                                       />
                                     ) : (
-                                      <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-                                        <Package className="w-6 h-6 text-gray-400" />
+                                      <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
+                                        <Package className="w-8 h-8 text-gray-400" />
                                       </div>
                                     )}
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-medium text-gray-900 truncate">
+                                      <p className="text-sm font-medium text-gray-900">
                                         {item.productId?.name || 'Unknown Product'}
                                       </p>
-                                      <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
-                                        <span className="text-xs text-gray-300">|</span>
-                                        <span className="text-xs text-gray-500">Seller: {item.sellerId?.businessName}</span>
+                                      <div className="mt-1 space-y-0.5">
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                          <span>SKU: {item.productId?.sku || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                          <span>Seller: {item.sellerId?.businessName || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                          <span>Qty: {item.quantity}</span>
+                                          <span className="text-gray-300">|</span>
+                                          <span>Price: {formatCurrency(item.price || 0)}</span>
+                                        </div>
                                       </div>
                                     </div>
-                                    <p className="text-sm font-medium text-gray-900">
-                                      {formatCurrency((item.price || 0) * (item.quantity || 0))}
-                                    </p>
+                                    <div className="text-right flex-shrink-0">
+                                      <p className="text-sm font-semibold text-gray-900">
+                                        {formatCurrency((item.price || 0) * (item.quantity || 0))}
+                                      </p>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
@@ -210,15 +207,27 @@ export default function OrdersTable({
                                   <div className="text-gray-900">
                                     <p>{order.shippingAddress?.addressLine1}</p>
                                     {order.shippingAddress?.addressLine2 && <p>{order.shippingAddress.addressLine2}</p>}
-                                    <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.pincode}</p>
+                                    <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.postalCode}</p>
                                     <p>{order.shippingAddress?.country}</p>
                                   </div>
                                 </div>
                               </div>
+                              {order.trackingNumber && (
+                                <div className="mt-3 pt-3 border-t border-gray-100">
+                                  <p className="text-xs text-gray-500 mb-1">Tracking Number</p>
+                                  <p className="font-mono text-sm font-medium text-blue-600">{order.trackingNumber}</p>
+                                </div>
+                              )}
                             </div>
+
+                            {order.notes && (
+                              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                <h3 className="text-sm font-medium text-gray-900 mb-2">Order Notes</h3>
+                                <p className="text-sm text-gray-600">{order.notes}</p>
+                              </div>
+                            )}
                           </div>
 
-                          {/* Order Sidebar */}
                           <div className="space-y-4">
                             <div className="bg-white rounded-lg p-4 border border-gray-200">
                               <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
@@ -260,16 +269,30 @@ export default function OrdersTable({
                             </div>
 
                             <div className="bg-white rounded-lg p-4 border border-gray-200">
-                              <h3 className="text-sm font-medium text-gray-900 mb-3">Actions</h3>
-                              <div className="space-y-2">
-                                <button className="w-full px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium flex items-center justify-center gap-2">
-                                  <Eye className="w-4 h-4" />
-                                  View Full Details
-                                </button>
-                                <button className="w-full px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center gap-2">
-                                  <History className="w-4 h-4" />
-                                  View History
-                                </button>
+                              <h3 className="text-sm font-medium text-gray-900 mb-3">Customer Info</h3>
+                              <div className="space-y-2 text-sm">
+                                <div>
+                                  <p className="text-xs text-gray-500">Name</p>
+                                  <p className="font-medium text-gray-900">{order.userId?.name || 'N/A'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500">Email</p>
+                                  <p className="text-gray-900">{order.userId?.email || 'N/A'}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="bg-white rounded-lg p-4 border border-gray-200">
+                              <h3 className="text-sm font-medium text-gray-900 mb-3">Order Timeline</h3>
+                              <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Created</span>
+                                  <span className="text-gray-900">{new Date(order.createdAt).toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Last Updated</span>
+                                  <span className="text-gray-900">{new Date(order.updatedAt).toLocaleString()}</span>
+                                </div>
                               </div>
                             </div>
                           </div>

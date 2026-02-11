@@ -1,9 +1,6 @@
 import { JSX } from 'react';
 import { XCircle, Package, CheckCircle } from 'lucide-react';
-import { formatCurrency } from '@/utils/currency';
-import { AdminProduct } from '@/types/adminProduct';
-
-type ProductStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'UNPUBLISHED';
+import type { AdminProduct, ProductStatus } from '@/types/admin/products';
 
 interface ProductDetailModalProps {
     product: AdminProduct;
@@ -36,9 +33,9 @@ export default function ProductDetailModal({
                 <div className="p-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            {product.mainImage?.url ? (
+                            {product.images?.[0] ? (
                                 <img
-                                    src={product.mainImage.url}
+                                    src={product.images[0]}
                                     alt={product.name}
                                     className="w-full h-64 object-cover rounded-lg"
                                 />
@@ -66,11 +63,11 @@ export default function ProductDetailModal({
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500">Price</p>
-                                    <p className="text-sm font-medium text-gray-900">{formatCurrency(product.finalPrice)}</p>
+                                    <p className="text-sm font-medium text-gray-900">₹{product.price.toLocaleString('en-IN')}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500">Stock</p>
-                                    <p className="text-sm font-medium text-gray-900">{product.inStockQuantity}</p>
+                                    <p className="text-sm font-medium text-gray-900">{product.stock}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500">Status</p>
@@ -94,7 +91,7 @@ export default function ProductDetailModal({
                             {(product.status === 'PENDING' || !product.status) && (
                                 <div className="flex gap-2 mt-4">
                                     <button
-                                        onClick={() => onApprove(product._id)}
+                                        onClick={() => onApprove(product.id)}
                                         className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
                                     >
                                         <CheckCircle className="w-4 h-4" />
@@ -103,7 +100,7 @@ export default function ProductDetailModal({
                                     <button
                                         onClick={() => {
                                             const reason = prompt('Enter rejection reason:');
-                                            if (reason) onReject(product._id, reason);
+                                            if (reason) onReject(product.id, reason);
                                         }}
                                         className="flex-1 bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
                                     >

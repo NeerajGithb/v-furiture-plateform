@@ -1,6 +1,6 @@
 import { IndianRupee } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
-import { PriceBreakdownProps } from '@/types/sellerOrder';
+import { PriceBreakdownProps } from '@/types/seller/orders';
 
 export function PriceBreakdown({ order }: PriceBreakdownProps) {
   // Calculate original price (subtotal + discount)

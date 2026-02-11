@@ -1,4 +1,4 @@
-import { AdminDashboardQueryRequest, DashboardLayoutRequest } from "./AdminDashboardSchemas";
+import { AdminDashboardQueryRequest, EntityScope } from "./AdminDashboardSchemas";
 
 export interface DashboardOverview {
   totalRevenue: number;
@@ -18,136 +18,74 @@ export interface SalesMetrics {
   weekRevenue: number;
   monthRevenue: number;
   yearRevenue: number;
-  salesTrend: Array<{
-    date: string;
-    revenue: number;
-    orders: number;
-  }>;
-  topSellingProducts: Array<{
-    id: string;
-    name: string;
-    revenue: number;
-    quantity: number;
-  }>;
 }
 
 export interface UserMetrics {
   totalUsers: number;
   activeUsers: number;
   newUsers: number;
+  verifiedUsers: number;
+  unverifiedUsers: number;
   userGrowth: number;
-  usersByLocation: Array<{
-    location: string;
-    count: number;
-    percentage: number;
-  }>;
-  userActivity: Array<{
-    date: string;
-    activeUsers: number;
-    newUsers: number;
-  }>;
 }
 
 export interface ProductMetrics {
   totalProducts: number;
   publishedProducts: number;
   pendingProducts: number;
+  draftProducts: number;
   outOfStockProducts: number;
-  productsByCategory: Array<{
-    categoryId: string;
-    categoryName: string;
-    count: number;
-    percentage: number;
-  }>;
-  recentProducts: Array<{
-    id: string;
-    name: string;
-    status: string;
-    createdAt: Date;
-  }>;
+  lowStockProducts: number;
+  totalCategories: number;
 }
 
 export interface SellerMetrics {
   totalSellers: number;
   activeSellers: number;
   pendingSellers: number;
+  suspendedSellers: number;
   verifiedSellers: number;
-  topSellers: Array<{
-    id: string;
-    name: string;
-    revenue: number;
-    orders: number;
-    rating: number;
-  }>;
-  sellerGrowth: Array<{
-    date: string;
-    newSellers: number;
-    activeSellers: number;
-  }>;
+  inactiveSellers: number;
 }
 
 export interface OrderMetrics {
   totalOrders: number;
   pendingOrders: number;
   processingOrders: number;
-  completedOrders: number;
+  shippedOrders: number;
+  deliveredOrders: number;
   cancelledOrders: number;
-  ordersByStatus: Array<{
-    status: string;
-    count: number;
-    percentage: number;
-  }>;
-  recentOrders: Array<{
-    id: string;
-    orderNumber: string;
-    customerName: string;
-    amount: number;
-    status: string;
-    createdAt: Date;
-  }>;
+  returnedOrders: number;
 }
 
-export interface DashboardWidget {
-  id: string;
-  type: string;
-  title: string;
-  data: any;
-  lastUpdated: Date;
+export interface PaymentMetrics {
+  totalPayments: number;
+  paidOrders: number;
+  pendingPayments: number;
+  failedPayments: number;
+  refundedPayments: number;
 }
 
-export interface DashboardLayout {
-  widgets: Array<{
-    widgetId: string;
-    position: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    };
-    settings?: Record<string, any>;
-  }>;
-  layout: 'grid' | 'list';
-  lastModified: Date;
+export interface ReviewMetrics {
+  totalReviews: number;
+  pendingReviews: number;
+  approvedReviews: number;
+  rejectedReviews: number;
+  averageRating: number;
 }
 
 export interface IAdminDashboardRepository {
   // Overview data
-  getDashboardOverview(query: AdminDashboardQueryRequest): Promise<DashboardOverview>;
+  getDashboardOverview(scope?: EntityScope): Promise<DashboardOverview>;
   
-  // Section-specific metrics
-  getSalesMetrics(query: AdminDashboardQueryRequest): Promise<SalesMetrics>;
-  getUserMetrics(query: AdminDashboardQueryRequest): Promise<UserMetrics>;
-  getProductMetrics(query: AdminDashboardQueryRequest): Promise<ProductMetrics>;
-  getSellerMetrics(query: AdminDashboardQueryRequest): Promise<SellerMetrics>;
-  getOrderMetrics(query: AdminDashboardQueryRequest): Promise<OrderMetrics>;
-  
-  // Widget management
-  getWidget(widgetId: string): Promise<DashboardWidget | null>;
-  updateWidget(widgetId: string, data: any): Promise<DashboardWidget>;
-  
-  // Layout management
-  getDashboardLayout(adminId: string): Promise<DashboardLayout | null>;
-  updateDashboardLayout(adminId: string, layout: DashboardLayoutRequest): Promise<DashboardLayout>;
+  // Section-specific metrics (counts only) - each with its own scope
+  getSalesMetrics(scope?: EntityScope): Promise<SalesMetrics>;
+  getUserMetrics(scope?: EntityScope): Promise<UserMetrics>;
+  getProductMetrics(scope?: EntityScope): Promise<ProductMetrics>;
+  getSellerMetrics(scope?: EntityScope): Promise<SellerMetrics>;
+  getOrderMetrics(scope?: EntityScope): Promise<OrderMetrics>;
+  getPaymentMetrics(scope?: EntityScope): Promise<PaymentMetrics>;
+  getReviewMetrics(scope?: EntityScope): Promise<ReviewMetrics>;
   
   // Real-time data
   getRealTimeMetrics(): Promise<{

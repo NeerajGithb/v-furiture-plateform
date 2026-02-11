@@ -2,17 +2,33 @@ import {
   Star, MessageSquare, CheckCircle, XCircle, Clock, AlertTriangle,
   TrendingUp
 } from 'lucide-react';
-import { AdminReviewStats } from '@/types/review';
+import { ReviewStats } from '@/types/admin/reviews';
 
 interface ReviewsOverviewProps {
-  stats: AdminReviewStats;
+  stats?: ReviewStats;
+  isLoading?: boolean;
   onNavigate: (tab: string) => void;
 }
 
-export default function ReviewsOverview({ stats, onNavigate }: ReviewsOverviewProps) {
+export default function ReviewsOverview({ stats, isLoading, onNavigate }: ReviewsOverviewProps) {
   const getPercentage = (value: number, total: number) => {
     return total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
   };
+
+  if (!stats) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded w-16"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -24,7 +40,7 @@ export default function ReviewsOverview({ stats, onNavigate }: ReviewsOverviewPr
             <p className="text-sm font-medium text-gray-500">Total Reviews</p>
             <MessageSquare className="w-4 h-4 text-gray-400" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">{stats.total.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalReviews.toLocaleString()}</p>
         </div>
 
         {/* Average Rating */}
@@ -56,9 +72,9 @@ export default function ReviewsOverview({ stats, onNavigate }: ReviewsOverviewPr
             <Clock className="w-4 h-4 text-amber-600" />
           </div>
           <div className="flex items-end gap-2">
-            <p className="text-2xl font-bold text-gray-900">{stats.pending.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.pendingReviews.toLocaleString()}</p>
             <p className="text-xs text-amber-600 font-medium mb-1">
-              {getPercentage(stats.pending, stats.total)}%
+              {getPercentage(stats.pendingReviews, stats.totalReviews)}%
             </p>
           </div>
         </div>
@@ -70,9 +86,9 @@ export default function ReviewsOverview({ stats, onNavigate }: ReviewsOverviewPr
             <CheckCircle className="w-4 h-4 text-green-600" />
           </div>
           <div className="flex items-end gap-2">
-            <p className="text-2xl font-bold text-gray-900">{stats.approved.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.approvedReviews.toLocaleString()}</p>
             <p className="text-xs text-green-600 font-medium mb-1">
-              {getPercentage(stats.approved, stats.total)}%
+              {getPercentage(stats.approvedReviews, stats.totalReviews)}%
             </p>
           </div>
         </div>
@@ -87,7 +103,7 @@ export default function ReviewsOverview({ stats, onNavigate }: ReviewsOverviewPr
         <div className="space-y-3">
           {[5, 4, 3, 2, 1].map((rating) => {
             const count = stats.breakdown[rating as keyof typeof stats.breakdown] || 0;
-            const percentage = getPercentage(count, stats.total);
+            const percentage = getPercentage(count, stats.totalReviews);
 
             return (
               <div key={rating} className="flex items-center gap-4">
@@ -108,26 +124,6 @@ export default function ReviewsOverview({ stats, onNavigate }: ReviewsOverviewPr
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h4 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button
-            onClick={() => onNavigate('pending')}
-            className="flex items-center justify-between px-4 py-3 text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200"
-          >
-            <span>Review Pending</span>
-            <span className="bg-white px-2 py-0.5 rounded text-amber-800 text-xs font-bold border border-amber-100">{stats.pending}</span>
-          </button>
-          <button
-            onClick={() => onNavigate('all')}
-            className="flex items-center justify-center px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
-          >
-            View All Reviews
-          </button>
         </div>
       </div>
     </div>

@@ -1,81 +1,113 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useGlobalFilterStore } from "@/stores/globalFilterStore";
+import { useSellerProductsStore } from "@/stores/seller/sellerProductsStore";
 import { sellerProductsService } from "@/services/seller/sellerProductsService";
+import { categoryService } from "@/services/seller/categoryService";
 import { 
   CreateProductRequest, 
   UpdateProductRequest,
   BulkUpdateRequest,
-  ProductsQuery,
   ExportOptions
-} from "@/types/sellerProducts";
+} from "@/types/seller/products";
 
-// Get products with filters and pagination
-export const useSellerProducts = (params: ProductsQuery = {}, enabled: boolean = true) => {
+export const useSellerProducts = () => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+  const period = useGlobalFilterStore(s => s.period);
+  const currentPage = useSellerProductsStore(s => s.currentPage);
+
   return useQuery({
-    queryKey: ["seller-products", params],
-    queryFn: () => sellerProductsService.getProducts(params),
-    enabled: enabled,
+    queryKey: ["seller-products", period, currentPage],
+    queryFn: () => sellerProductsService.getProducts({ 
+      period, 
+      page: currentPage, 
+      limit: 20 
+    }),
+    enabled: !!seller && !authLoading,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
 };
 
-// Get product statistics
-export const useSellerProductStats = (period?: string, enabled: boolean = true) => {
+export const useSellerProductStats = () => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+  const period = useGlobalFilterStore(s => s.period);
+
   return useQuery({
     queryKey: ["seller-product-stats", period],
     queryFn: () => sellerProductsService.getProductStats(period),
-    enabled: enabled,
+    enabled: !!seller && !authLoading,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 };
 
-// Get single product
-export const useSellerProduct = (productId: string, enabled: boolean = true) => {
+export const useSellerCategories = () => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+
+  return useQuery({
+    queryKey: ["seller-categories"],
+    queryFn: () => categoryService.getCategories(),
+    enabled: !!seller && !authLoading,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+};
+
+export const useSellerSubcategories = () => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+
+  return useQuery({
+    queryKey: ["seller-subcategories"],
+    queryFn: () => categoryService.getSubcategories(),
+    enabled: !!seller && !authLoading,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+};
+
+
+
+export const useSellerProduct = (productId: string) => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+
   return useQuery({
     queryKey: ["seller-product", productId],
     queryFn: () => sellerProductsService.getProductById(productId),
-    enabled: enabled && !!productId,
+    enabled: !!seller && !authLoading && !!productId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 };
 
-// Get product analytics
-export const useProductAnalytics = (productId: string, period?: string, enabled: boolean = true) => {
+export const useProductAnalytics = (productId: string) => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+  const period = useGlobalFilterStore(s => s.period);
+
   return useQuery({
     queryKey: ["product-analytics", productId, period],
     queryFn: () => sellerProductsService.getProductAnalytics(productId, period),
-    enabled: enabled && !!productId,
+    enabled: !!seller && !authLoading && !!productId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 };
 
-// Get dashboard analytics
-export const useDashboardAnalytics = (period?: string, enabled: boolean = true) => {
-  return useQuery({
-    queryKey: ["dashboard-analytics", period],
-    queryFn: () => sellerProductsService.getDashboardAnalytics(period),
-    enabled: enabled,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-};
 
-// Get product reviews
-export const useProductReviews = (productId: string, params: { page?: number; limit?: number } = {}, enabled: boolean = true) => {
+
+export const useProductReviews = (productId: string, params: { page?: number; limit?: number } = {}) => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+
   return useQuery({
     queryKey: ["product-reviews", productId, params],
     queryFn: () => sellerProductsService.getProductReviews(productId, params),
-    enabled: enabled && !!productId,
+    enabled: !!seller && !authLoading && !!productId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
 };
 
-// Create product
 export const useCreateProduct = () => {
   const queryClient = useQueryClient();
 
@@ -83,8 +115,6 @@ export const useCreateProduct = () => {
     mutationFn: (data: CreateProductRequest) => sellerProductsService.createProduct(data),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["seller-products"] });
-      queryClient.invalidateQueries({ queryKey: ["seller-product-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-analytics"] });
       toast.success(result.message);
     },
     onError: (error: Error) => {
@@ -93,7 +123,6 @@ export const useCreateProduct = () => {
   });
 };
 
-// Update product
 export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
 
@@ -103,8 +132,6 @@ export const useUpdateProduct = () => {
     onSuccess: (result, { productId }) => {
       queryClient.invalidateQueries({ queryKey: ["seller-products"] });
       queryClient.invalidateQueries({ queryKey: ["seller-product", productId] });
-      queryClient.invalidateQueries({ queryKey: ["seller-product-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-analytics"] });
       toast.success(result.message);
     },
     onError: (error: Error) => {
@@ -113,17 +140,15 @@ export const useUpdateProduct = () => {
   });
 };
 
-// Update product status
 export const useUpdateProductStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ productId, isPublished }: { productId: string; isPublished: boolean }) =>
       sellerProductsService.updateProductStatus(productId, isPublished),
-    onSuccess: (result, { productId, isPublished }) => {
+    onSuccess: (result, { productId }) => {
       queryClient.invalidateQueries({ queryKey: ["seller-products"] });
       queryClient.invalidateQueries({ queryKey: ["seller-product", productId] });
-      queryClient.invalidateQueries({ queryKey: ["seller-product-stats"] });
       toast.success(result.message);
     },
     onError: (error: Error) => {
@@ -132,7 +157,6 @@ export const useUpdateProductStatus = () => {
   });
 };
 
-// Delete product
 export const useDeleteProduct = () => {
   const queryClient = useQueryClient();
 
@@ -141,8 +165,6 @@ export const useDeleteProduct = () => {
     onSuccess: (result, productId) => {
       queryClient.invalidateQueries({ queryKey: ["seller-products"] });
       queryClient.removeQueries({ queryKey: ["seller-product", productId] });
-      queryClient.invalidateQueries({ queryKey: ["seller-product-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-analytics"] });
       toast.success(result.message);
     },
     onError: (error: Error) => {
@@ -151,7 +173,6 @@ export const useDeleteProduct = () => {
   });
 };
 
-// Bulk update products
 export const useBulkUpdateProducts = () => {
   const queryClient = useQueryClient();
 
@@ -159,8 +180,6 @@ export const useBulkUpdateProducts = () => {
     mutationFn: (data: BulkUpdateRequest) => sellerProductsService.bulkUpdateProducts(data),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["seller-products"] });
-      queryClient.invalidateQueries({ queryKey: ["seller-product-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-analytics"] });
       toast.success(`${result.message} (${result.modifiedCount} products updated)`);
     },
     onError: (error: Error) => {
@@ -169,7 +188,6 @@ export const useBulkUpdateProducts = () => {
   });
 };
 
-// Bulk delete products
 export const useBulkDeleteProducts = () => {
   const queryClient = useQueryClient();
 
@@ -177,8 +195,6 @@ export const useBulkDeleteProducts = () => {
     mutationFn: (productIds: string[]) => sellerProductsService.bulkDeleteProducts(productIds),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["seller-products"] });
-      queryClient.invalidateQueries({ queryKey: ["seller-product-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-analytics"] });
       toast.success(`${result.message} (${result.deletedCount} products deleted)`);
     },
     onError: (error: Error) => {
@@ -187,7 +203,6 @@ export const useBulkDeleteProducts = () => {
   });
 };
 
-// Duplicate product
 export const useDuplicateProduct = () => {
   const queryClient = useQueryClient();
 
@@ -204,7 +219,6 @@ export const useDuplicateProduct = () => {
   });
 };
 
-// Update product inventory
 export const useUpdateProductInventory = () => {
   const queryClient = useQueryClient();
 
@@ -223,12 +237,10 @@ export const useUpdateProductInventory = () => {
   });
 };
 
-// Export products
 export const useExportProducts = () => {
   return useMutation({
     mutationFn: (options: ExportOptions = {}) => sellerProductsService.exportProducts(options),
     onSuccess: (result) => {
-      // Create download link
       const link = document.createElement('a');
       link.href = result.downloadUrl;
       link.download = `products-export-${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -243,7 +255,6 @@ export const useExportProducts = () => {
   });
 };
 
-// Legacy hooks for backward compatibility
 export const useSellerProductById = useSellerProduct;
 export const useCreateSellerProduct = useCreateProduct;
 export const useUpdateSellerProduct = useUpdateProduct;

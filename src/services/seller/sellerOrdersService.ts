@@ -7,12 +7,13 @@ import {
   OrderNotes,
   OrderCancel,
   BulkOrderUpdate,
-  ExportOrdersOptions
-} from "@/types/sellerOrder";
+  ExportOrdersOptions,
+  OrderStats
+} from "@/types/seller/orders";
 
 interface OrdersResponse {
   orders: SellerOrder[];
-  pagination?: {
+  pagination: {
     page: number;
     limit: number;
     total: number;
@@ -20,34 +21,29 @@ interface OrdersResponse {
     hasNext: boolean;
     hasPrev: boolean;
   };
-  stats?: any;
 }
 
 class SellerOrdersService extends BasePrivateService {
   constructor() {
-    super("/api");
+    super("/api/seller");
   }
 
-  // Get seller orders with pagination and filters
-  async getOrders(params: OrdersQuery = {}): Promise<OrdersResponse> {
-    const response = await this.get<OrdersResponse>("/seller/orders", params);
+  async getOrders(params: Partial<OrdersQuery> = {}): Promise<OrdersResponse> {
+    const result = await this.getPaginated<SellerOrder>("/orders", params);
+    return {
+      orders: result.data,
+      pagination: result.pagination
+    };
+  }
+
+  async getOrderStats(period?: string): Promise<OrderStats> {
+    const params: any = { stats: "true" };
+    if (period) params.period = period;
+    
+    const response = await this.get<OrderStats>("/orders", params);
 
     if (response.success) {
       return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch orders.",
-      );
-    }
-  }
-
-  // Get order statistics
-  async getOrderStats(period?: string): Promise<any> {
-    const params = period ? { action: "stats", period } : { action: "stats" };
-    const response = await this.get<{ stats: any }>("/seller/orders", params);
-
-    if (response.success) {
-      return response.data!.stats;
     } else {
       throw new Error(
         response.error?.message || "Failed to fetch order statistics.",
@@ -55,9 +51,8 @@ class SellerOrdersService extends BasePrivateService {
     }
   }
 
-  // Get single order by ID
   async getOrderById(orderId: string): Promise<SellerOrder> {
-    const response = await this.get<{ order: SellerOrder }>(`/seller/orders/${orderId}`);
+    const response = await this.get<{ order: SellerOrder }>(`/orders/${orderId}`);
 
     if (response.success) {
       return response.data!.order;
@@ -68,71 +63,81 @@ class SellerOrdersService extends BasePrivateService {
     }
   }
 
-  // Update order status
-  async updateOrderStatus(orderId: string, data: OrderStatusUpdate): Promise<void> {
-    const response = await this.patch(`/seller/orders/${orderId}`, {
+  async updateOrderStatus(orderId: string, data: OrderStatusUpdate): Promise<{ message: string }> {
+    const response = await this.post<{ message: string }>(`/orders/${orderId}`, {
       action: "updateStatus",
       ...data,
     });
 
-    if (!response.success) {
+    if (response.success) {
+      return {
+        message: (response as { meta?: { message?: string } }).meta?.message || 'Order status updated successfully'
+      };
+    } else {
       throw new Error(
         response.error?.message || "Failed to update order status.",
       );
     }
   }
 
-  // Update order tracking
-  async updateOrderTracking(orderId: string, data: OrderTrackingUpdate): Promise<void> {
-    const response = await this.patch(`/seller/orders/${orderId}`, {
+  async updateOrderTracking(orderId: string, data: OrderTrackingUpdate): Promise<{ message: string }> {
+    const response = await this.post<{ message: string }>(`/orders/${orderId}`, {
       action: "updateTracking",
       ...data,
     });
 
-    if (!response.success) {
+    if (response.success) {
+      return {
+        message: (response as { meta?: { message?: string } }).meta?.message || 'Tracking information updated successfully'
+      };
+    } else {
       throw new Error(
         response.error?.message || "Failed to update tracking information.",
       );
     }
   }
 
-  // Add order notes
-  async addOrderNotes(orderId: string, data: OrderNotes): Promise<void> {
-    const response = await this.patch(`/seller/orders/${orderId}`, {
+  async addOrderNotes(orderId: string, data: OrderNotes): Promise<{ message: string }> {
+    const response = await this.post<{ message: string }>(`/orders/${orderId}`, {
       action: "addNotes",
       ...data,
     });
 
-    if (!response.success) {
+    if (response.success) {
+      return {
+        message: (response as { meta?: { message?: string } }).meta?.message || 'Notes added successfully'
+      };
+    } else {
       throw new Error(
         response.error?.message || "Failed to add order notes.",
       );
     }
   }
 
-  // Cancel order
-  async cancelOrder(orderId: string, data: OrderCancel): Promise<void> {
-    const response = await this.patch(`/seller/orders/${orderId}`, {
+  async cancelOrder(orderId: string, data: OrderCancel): Promise<{ message: string }> {
+    const response = await this.post<{ message: string }>(`/orders/${orderId}`, {
       action: "cancel",
       ...data,
     });
 
-    if (!response.success) {
+    if (response.success) {
+      return {
+        message: (response as { meta?: { message?: string } }).meta?.message || 'Order cancelled successfully'
+      };
+    } else {
       throw new Error(
         response.error?.message || "Failed to cancel order.",
       );
     }
   }
 
-  // Bulk update orders
   async bulkUpdateOrders(data: BulkOrderUpdate): Promise<{ message: string }> {
-    const response = await this.patch<{ message: string }>("/seller/orders", {
-      action: "bulk",
-      ...data,
-    });
+    const response = await this.post<{ message: string }>("/orders?action=bulk-update", data);
 
     if (response.success) {
-      return response.data!;
+      return {
+        message: (response as { meta?: { message?: string } }).meta?.message || 'Orders updated successfully'
+      };
     } else {
       throw new Error(
         response.error?.message || "Failed to bulk update orders.",
@@ -140,12 +145,17 @@ class SellerOrdersService extends BasePrivateService {
     }
   }
 
-  // Export orders
-  async exportOrders(options: ExportOrdersOptions): Promise<any> {
-    const response = await this.get("/seller/orders", { action: "export", ...options });
+  async exportOrders(options: ExportOrdersOptions): Promise<{ downloadUrl: string; message: string }> {
+    const response = await this.get<{ downloadUrl: string }>("/orders", { 
+      action: "export", 
+      ...options 
+    });
 
     if (response.success) {
-      return response.data!;
+      return {
+        downloadUrl: response.data!.downloadUrl,
+        message: (response as { meta?: { message?: string } }).meta?.message || 'Orders exported successfully'
+      };
     } else {
       throw new Error(
         response.error?.message || "Failed to export orders.",
@@ -154,5 +164,4 @@ class SellerOrdersService extends BasePrivateService {
   }
 }
 
-// Export singleton instance
 export const sellerOrdersService = new SellerOrdersService();

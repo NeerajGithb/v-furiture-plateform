@@ -20,7 +20,7 @@ export const GET = withAdminAuth(
         if (queryParams.stats === "true") {
           const validatedQuery = ReviewStatsQuerySchema.parse(queryParams);
           const stats = await adminReviewsService.getReviewStats(validatedQuery);
-          return ApiResponseBuilder.success({ stats });
+          return ApiResponseBuilder.success(stats);
         }
 
         // Default: get reviews list
@@ -52,6 +52,28 @@ export const POST = withAdminAuth(
             count: reviews.length,
             exportedAt: new Date().toISOString(),
           });
+        }
+
+        return ApiResponseBuilder.badRequest("Invalid action specified");
+      },
+    ),
+  ),
+);
+
+export const PATCH = withAdminAuth(
+  withDB(
+    withRouteErrorHandling(
+      async (request: NextRequest, _admin: AuthenticatedAdmin) => {
+        const body = await request.json();
+        const { action } = body;
+
+        if (action === "bulk") {
+          const { reviewIds, updates } = body;
+          if (!Array.isArray(reviewIds) || reviewIds.length === 0) {
+            return ApiResponseBuilder.badRequest("reviewIds array is required");
+          }
+          const result = await adminReviewsService.bulkUpdateReviews({ reviewIds, updates });
+          return ApiResponseBuilder.success(result);
         }
 
         return ApiResponseBuilder.badRequest("Invalid action specified");

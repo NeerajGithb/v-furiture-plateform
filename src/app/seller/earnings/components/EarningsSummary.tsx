@@ -2,7 +2,7 @@
 
 import { TrendingUp, TrendingDown, DollarSign, CreditCard, Clock, Package, Percent, ShoppingBag } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
-import { EarningsSummaryProps } from '@/types/sellerEarnings';
+import { EarningsSummaryProps } from '@/types/seller/earnings';
 
 export default function EarningsSummary({ summary }: EarningsSummaryProps) {
   const metrics = [

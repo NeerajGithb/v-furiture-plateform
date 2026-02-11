@@ -22,7 +22,7 @@ import {
   X
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
-import { SellerOrder, SellerOrderStatus, OrdersListProps } from '@/types/sellerOrder';
+import { SellerOrder, SellerOrderStatus, OrdersListProps } from '@/types/seller/orders';
 import { useNavigate } from '@/components/NavigationLoader';
 
 export default function OrdersList({
@@ -139,40 +139,28 @@ export default function OrdersList({
     return actions;
   };
 
-  if (orders.length === 0) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="p-12 text-center">
-          <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-900 text-lg font-medium">No orders found</p>
-          <p className="text-gray-500 text-sm mt-1">Orders from customers will appear here</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <div className="divide-y divide-gray-200">
         {orders.map((order) => (
-          <div key={order._id} className="group">
+          <div key={order.id} className="group">
             {/* Order Header */}
             <div
-              className={`p-4 cursor-pointer transition-colors ${expandedOrder === order._id ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
-              onClick={() => setExpandedOrder(expandedOrder === order._id ? null : order._id)}
+              className={`p-4 cursor-pointer transition-colors ${expandedOrder === order.id ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
+              onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1">
                   <div className="flex items-center justify-center p-1 rounded hover:bg-gray-200 transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onToggleOrderSelection(order._id);
+                      onToggleOrderSelection(order.id);
                     }}
                   >
                     <input
                       type="checkbox"
-                      checked={selectedOrders.includes(order._id)}
-                      onChange={() => { }} // Handled by parent div
+                      checked={selectedOrders.includes(order.id)}
+                      onChange={() => { }}
                       className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900 cursor-pointer"
                     />
                   </div>
@@ -219,7 +207,7 @@ export default function OrdersList({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/seller/orders/${order._id}`);
+                        router.push(`/seller/orders/${order.id}`);
                       }}
                       className="p-1.5 hover:bg-gray-200 rounded-md transition-colors text-gray-500 hover:text-gray-900"
                       title="View Full Details"
@@ -227,7 +215,7 @@ export default function OrdersList({
                       <Eye className="w-4 h-4" />
                     </button>
                     <button className="p-1.5 hover:bg-gray-200 rounded-md transition-colors text-gray-400 hover:text-gray-600">
-                      {expandedOrder === order._id ? (
+                      {expandedOrder === order.id ? (
                         <ChevronUp className="w-4 h-4" />
                       ) : (
                         <ChevronDown className="w-4 h-4" />
@@ -239,7 +227,7 @@ export default function OrdersList({
             </div>
 
             {/* Expanded Order Details */}
-            {expandedOrder === order._id && (
+            {expandedOrder === order.id && (
               <div className="px-4 pb-4 bg-gray-50 border-t border-gray-200">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
                   {/* Order Items */}
@@ -250,8 +238,8 @@ export default function OrdersList({
                         Items Included ({order.items?.length || 0})
                       </h3>
                       <div className="space-y-4">
-                        {order.items?.map((item: any, index: number) => (
-                          <div key={index} className="flex items-start gap-4">
+                        {order.items?.map((item: any) => (
+                          <div key={item.id || item.productId} className="flex items-start gap-4">
                             <div className="w-12 h-12 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden border border-gray-200">
                               {item.productId?.mainImage?.url ? (
                                 <img
@@ -354,7 +342,7 @@ export default function OrdersList({
                       <div className="space-y-3">
                         {getStatusActions(order).map((action) => (
                           <div key={action.status}>
-                            {action.requiresTracking && editingTracking === order._id ? (
+                            {action.requiresTracking && editingTracking === order.id ? (
                               <div className="space-y-2">
                                 <input
                                   type="text"
@@ -365,7 +353,7 @@ export default function OrdersList({
                                 />
                                 <div className="flex gap-2">
                                   <button
-                                    onClick={() => handleTrackingSave(order._id, action.status)}
+                                    onClick={() => handleTrackingSave(order.id, action.status)}
                                     disabled={updateOrderStatus.isPending || !trackingNumber.trim()}
                                     className="flex-1 px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
                                   >
@@ -384,9 +372,9 @@ export default function OrdersList({
                               <button
                                 onClick={() => {
                                   if (action.requiresTracking) {
-                                    handleTrackingEdit(order._id, order.trackingNumber);
+                                    handleTrackingEdit(order.id, order.trackingNumber);
                                   } else {
-                                    onStatusChange(order._id, action.status);
+                                    onStatusChange(order.id, action.status);
                                   }
                                 }}
                                 disabled={updateOrderStatus.isPending}
@@ -404,7 +392,7 @@ export default function OrdersList({
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-gray-500">Tracking Number</span>
                               <button
-                                onClick={() => handleTrackingEdit(order._id, order.trackingNumber)}
+                                onClick={() => handleTrackingEdit(order.id, order.trackingNumber)}
                                 className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
                               >
                                 <Edit3 className="w-3 h-3" />
@@ -419,7 +407,7 @@ export default function OrdersList({
 
                         <div className="pt-2 border-t border-gray-100 space-y-2">
                           <button 
-                            onClick={() => window.open(`/seller/orders/${order._id}/invoice`, '_blank')}
+                            onClick={() => window.open(`/seller/orders/${order.id}/invoice`, '_blank')}
                             className="w-full px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
                           >
                             Download Invoice

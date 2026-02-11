@@ -4,7 +4,8 @@ import { withDB } from "@/lib/middleware/dbConnection";
 import { withRouteErrorHandling } from "@/lib/middleware/errorHandler";
 import { sellerOrdersService } from "@/lib/domain/seller/orders/SellerOrdersService";
 import { 
-  SellerOrdersQuerySchema, 
+  SellerOrdersQuerySchema,
+  OrderStatsQuerySchema,
   BulkOrderUpdateSchema, 
   OrderExportSchema 
 } from "@/lib/domain/seller/orders/SellerOrdersSchemas";
@@ -16,6 +17,13 @@ export const GET = withSellerAuth(
     withRouteErrorHandling(async (request: NextRequest, seller: AuthenticatedSeller) => {
       const { searchParams } = new URL(request.url);
       const queryParams = Object.fromEntries(searchParams.entries());
+      
+      // Handle stats request
+      if (queryParams.stats === "true") {
+        const validatedQuery = OrderStatsQuerySchema.parse(queryParams);
+        const stats = await sellerOrdersService.getOrdersStats(seller.id, validatedQuery);
+        return ApiResponseBuilder.success(stats);
+      }
       
       const validatedQuery = SellerOrdersQuerySchema.parse(queryParams);
       
@@ -30,23 +38,18 @@ export const GET = withSellerAuth(
         });
       }
       
-      // Handle stats action
-      if (validatedQuery.action === 'stats') {
-        const result = await sellerOrdersService.getOrdersStats(seller.id, {
-          status: validatedQuery.status,
-          period: validatedQuery.period,
-        });
-        return ApiResponseBuilder.success({ stats: result });
-      }
-      
       const result = await sellerOrdersService.getOrdersData(seller.id, validatedQuery);
       
-      // Check if result has pagination (normal list response)
-      if ('pagination' in result && result.pagination) {
-        return ApiResponseBuilder.paginated(result.orders, result.pagination, result.stats);
-      }
+      const pagination = {
+        page: validatedQuery.page || 1,
+        limit: validatedQuery.limit || 20,
+        total: result.total,
+        totalPages: Math.ceil(result.total / (validatedQuery.limit || 20)),
+        hasNext: (validatedQuery.page || 1) < Math.ceil(result.total / (validatedQuery.limit || 20)),
+        hasPrev: (validatedQuery.page || 1) > 1,
+      };
       
-      return ApiResponseBuilder.success(result);
+      return ApiResponseBuilder.paginated(result.orders, pagination);
     })
   )
 );
@@ -55,7 +58,7 @@ export const POST = withSellerAuth(
   withDB(
     withRouteErrorHandling(async (request: NextRequest, seller: AuthenticatedSeller) => {
       const { searchParams } = new URL(request.url);
-      const action = searchParams.get('action') || 'bulk-update';
+      const action = searchParams.get('action');
       
       if (action === 'bulk-update') {
         const body = await request.json();

@@ -2,7 +2,7 @@
 
 import { Package, AlertTriangle, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
-import { InventoryStatsProps } from '@/types/sellerInventory';
+import { InventoryStatsProps } from '@/types/seller/inventory';
 
 export default function InventoryStats({ stats }: InventoryStatsProps) {
   return (

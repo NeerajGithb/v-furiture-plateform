@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Tag, DollarSign, Percent, Calendar, Users } from 'lucide-react';
-import { AdminCoupon, CouponType } from '@/types/coupon';
+import { AdminCoupon, CouponType } from '@/types/admin/coupons';
+import { useCouponUIStore } from '@/stores/admin/couponStore';
+import { useCreateCoupon, useUpdateCoupon } from '@/hooks/admin/useAdminCoupons';
 
 interface CouponFormData {
   code: string;
@@ -14,24 +16,58 @@ interface CouponFormData {
   description?: string;
 }
 
-interface CouponFormModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: CouponFormData) => void;
-  editingCoupon?: AdminCoupon | null;
-  isLoading?: boolean;
-}
+export default function CouponFormModal() {
+  const showCreateModal = useCouponUIStore(s => s.showCreateModal);
+  const showEditModal = useCouponUIStore(s => s.showEditModal);
+  const editingCoupon = useCouponUIStore(s => s.editingCoupon);
+  const setShowCreateModal = useCouponUIStore(s => s.setShowCreateModal);
+  const setShowEditModal = useCouponUIStore(s => s.setShowEditModal);
+  const setEditingCoupon = useCouponUIStore(s => s.setEditingCoupon);
 
-export default function CouponFormModal({
-  isOpen,
-  onClose,
-  onSubmit,
-  editingCoupon,
-  isLoading = false
-}: CouponFormModalProps) {
+  const createCouponMutation = useCreateCoupon();
+  const updateCouponMutation = useUpdateCoupon();
+
+  const isOpen = showCreateModal || showEditModal;
+  const isLoading = createCouponMutation.isPending || updateCouponMutation.isPending;
+
+  const handleClose = () => {
+    setShowCreateModal(false);
+    setShowEditModal(false);
+    setEditingCoupon(null);
+  };
+
+  const handleSubmit = (formData: CouponFormData) => {
+    const apiData = {
+      code: formData.code,
+      type: formData.type,
+      discount: formData.value,
+      minOrderAmount: formData.minOrderAmount,
+      maxDiscount: formData.maxDiscount,
+      usageLimit: formData.usageLimit,
+      expiryDate: new Date(formData.expiry).toISOString(),
+      isActive: true,
+    };
+
+    if (editingCoupon) {
+      updateCouponMutation.mutate(
+        { couponId: editingCoupon.id, data: apiData },
+        {
+          onSuccess: () => {
+            handleClose();
+          }
+        }
+      );
+    } else {
+      createCouponMutation.mutate(apiData, {
+        onSuccess: () => {
+          handleClose();
+        }
+      });
+    }
+  };
   const [formData, setFormData] = useState<CouponFormData>({
     code: '',
-    type: 'flat',
+    type: 'fixed',
     value: 0,
     minOrderAmount: 0,
     maxDiscount: undefined,
@@ -48,18 +84,18 @@ export default function CouponFormModal({
       setFormData({
         code: editingCoupon.code,
         type: editingCoupon.type,
-        value: editingCoupon.value,
-        minOrderAmount: editingCoupon.minOrderAmount,
+        value: editingCoupon.discount,
+        minOrderAmount: editingCoupon.minOrderAmount || 0,
         maxDiscount: editingCoupon.maxDiscount,
-        expiry: new Date(editingCoupon.expiry).toISOString().split('T')[0],
-        usageLimit: editingCoupon.usageLimit,
-        perUserLimit: editingCoupon.perUserLimit,
-        description: editingCoupon.description || '',
+        expiry: new Date(editingCoupon.expiryDate).toISOString().split('T')[0],
+        usageLimit: editingCoupon.usageLimit || 1000,
+        perUserLimit: 1, // Not in AdminCoupon type
+        description: '', // Not in AdminCoupon type
       });
     } else {
       setFormData({
         code: '',
-        type: 'flat',
+        type: 'fixed',
         value: 0,
         minOrderAmount: 0,
         maxDiscount: undefined,
@@ -85,7 +121,7 @@ export default function CouponFormModal({
       newErrors.value = 'Value must be greater than 0';
     }
 
-    if (formData.type === 'percent' && formData.value > 100) {
+    if (formData.type === 'percentage' && formData.value > 100) {
       newErrors.value = 'Percentage cannot exceed 100%';
     }
 
@@ -113,10 +149,10 @@ export default function CouponFormModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      handleSubmit(formData);
     }
   };
 
@@ -132,7 +168,7 @@ export default function CouponFormModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleFormSubmit}>
           <div className="p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
@@ -142,7 +178,7 @@ export default function CouponFormModal({
               </h2>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 className="text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -178,8 +214,8 @@ export default function CouponFormModal({
                     onChange={(e) => handleChange('type', e.target.value as CouponType)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="flat">Fixed Amount (₹)</option>
-                    <option value="percent">Percentage (%)</option>
+                    <option value="fixed">Fixed Amount (₹)</option>
+                    <option value="percentage">Percentage (%)</option>
                   </select>
                 </div>
               </div>
@@ -192,7 +228,7 @@ export default function CouponFormModal({
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      {formData.type === 'flat' ? (
+                      {formData.type === 'fixed' ? (
                         <DollarSign className="w-4 h-4 text-gray-400" />
                       ) : (
                         <Percent className="w-4 h-4 text-gray-400" />
@@ -205,9 +241,9 @@ export default function CouponFormModal({
                       className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                         errors.value ? 'border-red-300' : 'border-gray-300'
                       }`}
-                      placeholder={formData.type === 'flat' ? '100' : '20'}
+                      placeholder={formData.type === 'fixed' ? '100' : '20'}
                       min="0"
-                      max={formData.type === 'percent' ? 100 : undefined}
+                      max={formData.type === 'percentage' ? 100 : undefined}
                     />
                   </div>
                   {errors.value && <p className="text-red-500 text-xs mt-1">{errors.value}</p>}
@@ -237,7 +273,7 @@ export default function CouponFormModal({
               </div>
 
               {/* Maximum Discount (for percentage coupons) */}
-              {formData.type === 'percent' && (
+              {formData.type === 'percentage' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Maximum Discount Amount (Optional)
@@ -353,7 +389,7 @@ export default function CouponFormModal({
               </button>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 disabled={isLoading}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50"
               >

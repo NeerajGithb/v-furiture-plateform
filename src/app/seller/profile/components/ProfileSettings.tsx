@@ -1,4 +1,4 @@
-import { SellerProfile, UpdateProfileRequest, ChangePasswordRequest } from '@/types/sellerProfile';
+import { SellerProfile, UpdateProfileRequest, ChangePasswordRequest } from '@/types/seller/profile';
 import { BusinessInformation } from './BusinessInformation';
 import { SecuritySettings } from './SecuritySettings';
 import { VerificationStatus } from './VerificationStatus';

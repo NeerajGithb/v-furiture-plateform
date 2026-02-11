@@ -4,7 +4,7 @@ import { withDB } from "@/lib/middleware/dbConnection";
 import { withRouteErrorHandling } from "@/lib/middleware/errorHandler";
 import { adminSellersService } from "@/lib/domain/admin/sellers/AdminSellersService";
 import { ApiResponseBuilder } from "@/lib/utils/apiResponse";
-import { SellerStatusUpdateSchema, SellerVerificationSchema } from "@/lib/domain/admin/sellers/AdminSellersSchemas";
+import { SellerStatusUpdateSchema, SellerVerificationUpdateSchema } from "@/lib/domain/admin/sellers/AdminSellersSchemas";
 
 interface RouteParams {
   params: Promise<{
@@ -50,7 +50,7 @@ export const PATCH = withAdminAuth(
             return ApiResponseBuilder.success(updatedSeller);
 
           case "updateVerification":
-            const verificationData = SellerVerificationSchema.parse({
+            const verificationData = SellerVerificationUpdateSchema.parse({
               sellerId,
               ...body,
             });

@@ -24,7 +24,7 @@ export const GET = withSellerAuth(
 
             const validatedQuery = SellerReviewsQuerySchema.parse(queryParams);
             const result = await sellerReviewsService.exportReviews(seller.id, validatedQuery);
-            return ApiResponseBuilder.success({ reviews: result }, {
+            return ApiResponseBuilder.success(result, {
               contentType: 'application/json',
               filename: `reviews-export-${new Date().toISOString().split('T')[0]}.json`
             });

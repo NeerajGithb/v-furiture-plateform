@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SortOrderSchema, PeriodSchema } from "../../shared/commonSchemas";
 
 export const SellerStatusSchema = z.enum(["active", "pending", "suspended", "inactive"]);
 export type SellerStatus = z.infer<typeof SellerStatusSchema>;
@@ -9,10 +10,11 @@ export const AdminSellersQuerySchema = z.object({
   search: z.string().optional(),
   status: SellerStatusSchema.optional(),
   verified: z.coerce.boolean().optional(),
+  period: PeriodSchema.optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   sortBy: z.enum(["createdAt", "updatedAt", "businessName", "revenue"]).default("createdAt"),
-  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  sortOrder: SortOrderSchema.default("desc"),
 });
 
 export const SellerStatusUpdateSchema = z.object({
@@ -26,6 +28,11 @@ export const SellerVerificationUpdateSchema = z.object({
   verified: z.boolean(),
 });
 
+export const SellerStatsQuerySchema = z.object({
+  period: PeriodSchema.default("30d"),
+});
+
 export type AdminSellersQueryRequest = z.infer<typeof AdminSellersQuerySchema>;
 export type SellerStatusUpdateRequest = z.infer<typeof SellerStatusUpdateSchema>;
 export type SellerVerificationUpdateRequest = z.infer<typeof SellerVerificationUpdateSchema>;
+export type SellerStatsQueryRequest = z.infer<typeof SellerStatsQuerySchema>;

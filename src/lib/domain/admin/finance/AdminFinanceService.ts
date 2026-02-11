@@ -6,6 +6,10 @@ export class AdminFinanceService {
     return await adminFinanceRepository.getFinanceOverview(query);
   }
 
+  async getFinanceData(query: FinanceQueryRequest) {
+    return await adminFinanceRepository.getFinanceData(query);
+  }
+
   async getRevenueData(query: FinanceQueryRequest) {
     return await adminFinanceRepository.getRevenueData(query);
   }

@@ -1,6 +1,6 @@
 import { BasePrivateService } from "../baseService";
 
-interface Category {
+export interface Category {
   _id: string;
   name: string;
   slug: string;
@@ -13,7 +13,7 @@ interface Category {
   updatedAt?: Date;
 }
 
-interface SubCategory {
+export interface SubCategory {
   _id: string;
   name: string;
   slug: string;
@@ -29,28 +29,35 @@ interface SubCategory {
 
 class CategoryService extends BasePrivateService {
   constructor() {
-    super("/api");
+    super("/api/seller");
   }
 
-  /**
-   * Fetches all categories for seller
-   */
   async getCategories(): Promise<Category[]> {
-    const response = await this.get<Category[]>("/categories");
-    return response.data || [];
+    try {
+      const response = await this.get<{ categories: Category[] }>("/categories");
+      if (response.success && response.data) {
+        return response.data.categories || [];
+      }
+      return [];
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+      throw error;
+    }
   }
 
-  /**
-   * Fetches all subcategories for seller
-   */
   async getSubcategories(): Promise<SubCategory[]> {
-    const response = await this.get<SubCategory[]>("/subcategories");
-    return response.data || [];
+    try {
+      const response = await this.get<{ subcategories: SubCategory[] }>("/subcategories");
+      if (response.success && response.data) {
+        return response.data.subcategories || [];
+      }
+      return [];
+    } catch (error) {
+      console.error("Failed to fetch subcategories:", error);
+      throw error;
+    }
   }
 
-  /**
-   * Gets subcategories by category ID
-   */
   async getSubcategoriesByCategory(categoryId: string): Promise<SubCategory[]> {
     const subcategories = await this.getSubcategories();
     return subcategories.filter((sub) => 

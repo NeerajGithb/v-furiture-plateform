@@ -1,13 +1,15 @@
 import { z } from "zod";
+import { PeriodSchema, SortOrderSchema } from "../../shared/commonSchemas";
 
 export const AdminReviewsQuerySchema = z.object({
+  period: PeriodSchema.optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(10),
   search: z.string().optional(),
   status: z.enum(["pending", "approved", "rejected"]).optional(),
   rating: z.coerce.number().min(1).max(5).optional(),
   sortBy: z.enum(["createdAt", "rating", "helpfulVotes"]).default("createdAt"),
-  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  sortOrder: SortOrderSchema.default("desc"),
 });
 
 export const ReviewStatusUpdateSchema = z.object({
@@ -17,7 +19,7 @@ export const ReviewStatusUpdateSchema = z.object({
 });
 
 export const ReviewStatsQuerySchema = z.object({
-  period: z.enum(["7days", "30days", "90days", "1year", "all"]).default("30days"),
+  period: PeriodSchema.optional(),
 });
 
 export const ReviewExportSchema = z.object({

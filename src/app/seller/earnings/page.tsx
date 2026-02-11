@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
   useSellerEarnings,
   useSellerEarningsSummary,
@@ -12,43 +11,32 @@ import {
   useExportEarnings,
   useBulkTransactionAction
 } from '@/hooks/seller/useSellerEarnings';
-import { EarningsFilters, PayoutFilters } from '@/types/sellerEarnings';
-import EarningsSkeleton from '../components/skeletons/EarningsSkeleton';
+import { useEarningsUIStore } from '@/stores/seller/earningsUIStore';
+import { LoaderGuard } from '@/components/ui/LoaderGuard';
+import PageHeader from '@/components/PageHeader';
+import { Download } from 'lucide-react';
 import {
-  EarningsHeader,
   EarningsSummary,
   EarningsOverview,
   EarningsTransactions,
   EarningsPayouts,
   EarningsAnalytics
 } from './components';
-import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function SellerEarningsPage() {
-  const [period, setPeriod] = useState('30days');
-  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'payouts' | 'analytics'>('overview');
-  const [refreshing, setRefreshing] = useState(false);
-  
-  // Filters state
-  const [transactionFilters, setTransactionFilters] = useState<EarningsFilters>({
-    page: 1,
-    limit: 20,
-    status: 'all'
-  });
-  const [payoutFilters, setPayoutFilters] = useState<PayoutFilters>({
-    page: 1,
-    limit: 10,
-    status: 'all'
-  });
+  const activeTab = useEarningsUIStore(s => s.activeTab);
+  const setActiveTab = useEarningsUIStore(s => s.setActiveTab);
+  const transactionsPage = useEarningsUIStore(s => s.transactionsPage);
+  const setTransactionsPage = useEarningsUIStore(s => s.setTransactionsPage);
+  const payoutsPage = useEarningsUIStore(s => s.payoutsPage);
+  const setPayoutsPage = useEarningsUIStore(s => s.setPayoutsPage);
 
-  // React Query hooks
-  const { data: earningsData, isLoading, error, refetch } = useSellerEarnings({ period });
-  const { data: summary } = useSellerEarningsSummary(period);
-  const { data: transactionsData } = useSellerTransactions(transactionFilters);
-  const { data: payoutsData } = useSellerPayouts(payoutFilters);
-  const { data: analytics } = useSellerEarningsAnalytics(period);
+  const { data: earningsData, isPending, error } = useSellerEarnings();
+  const { data: summary } = useSellerEarningsSummary();
+  const { data: transactionsData } = useSellerTransactions();
+  const { data: payoutsData } = useSellerPayouts();
+  const { data: analytics } = useSellerEarningsAnalytics();
   
-  // Mutations
   const requestPayout = useRequestPayout();
   const cancelPayout = useCancelPayout();
   const exportEarnings = useExportEarnings();
@@ -68,7 +56,6 @@ export default function SellerEarningsPage() {
 
   const handleExport = async (options = {}) => {
     await exportEarnings.mutateAsync({
-      period,
       includeTransactions: true,
       includePayouts: true,
       includeSummary: true,
@@ -82,12 +69,6 @@ export default function SellerEarningsPage() {
       transactionIds,
       action
     });
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await refetch();
-    setTimeout(() => setRefreshing(false), 500);
   };
 
   const getStatusBadge = (status: string) => {
@@ -108,51 +89,32 @@ export default function SellerEarningsPage() {
     }
   };
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Earnings</h3>
-          <p className="text-gray-600 mb-4">
-            {error instanceof Error ? error.message : 'Unable to load earnings data. Please try again.'}
-          </p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? 'Retrying...' : 'Retry'}
-            </button>
-            <button
-              onClick={() => window.history.back()}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Go Back
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <>
-      {isLoading && <EarningsSkeleton />}
-      {!isLoading && (
+    <LoaderGuard 
+      isLoading={isPending} 
+      error={error}
+      isEmpty={!earningsData}
+      emptyMessage="No earnings data"
+    >
+      {() => (
         <div className="space-y-6 max-w-7xl mx-auto">
-          <EarningsHeader
-            period={period}
-            onPeriodChange={setPeriod}
-            onExport={handleExport}
-            isExporting={exportEarnings.isPending}
+          <PageHeader
+            title="Earnings"
+            description="Track your revenue and payouts"
+            actions={
+              <button
+                onClick={handleExport}
+                disabled={exportEarnings.isPending}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 text-sm font-medium"
+              >
+                <Download className="w-4 h-4" />
+                {exportEarnings.isPending ? 'Exporting...' : 'Export'}
+              </button>
+            }
           />
 
           <EarningsSummary summary={summary || earningsData?.summary} />
 
-          {/* Enhanced Tabs */}
           <div className="bg-white rounded-lg border border-gray-200">
             <div className="border-b border-gray-200">
               <nav className="flex space-x-8 px-6">
@@ -198,11 +160,11 @@ export default function SellerEarningsPage() {
               {activeTab === 'transactions' && (
                 <EarningsTransactions
                   transactions={transactionsData?.transactions || []}
-                  filters={transactionFilters}
-                  onFiltersChange={setTransactionFilters}
+                  filters={{ page: transactionsPage, limit: 20, status: 'all' }}
+                  onFiltersChange={(filters) => setTransactionsPage(filters.page || 1)}
                   getStatusBadge={getStatusBadge}
                   pagination={transactionsData?.pagination}
-                  onPageChange={(page) => setTransactionFilters(prev => ({ ...prev, page }))}
+                  onPageChange={setTransactionsPage}
                   onBulkAction={handleBulkTransactionAction}
                   isBulkProcessing={bulkTransactionAction.isPending}
                 />
@@ -213,7 +175,7 @@ export default function SellerEarningsPage() {
                   payouts={payoutsData?.payouts || []}
                   getStatusBadge={getStatusBadge}
                   pagination={payoutsData?.pagination}
-                  onPageChange={(page) => setPayoutFilters(prev => ({ ...prev, page }))}
+                  onPageChange={setPayoutsPage}
                   onCancelPayout={handleCancelPayout}
                   isCancelling={cancelPayout.isPending}
                 />
@@ -222,14 +184,12 @@ export default function SellerEarningsPage() {
               {activeTab === 'analytics' && (
                 <EarningsAnalytics
                   analytics={analytics}
-                  period={period}
-                  onPeriodChange={setPeriod}
                 />
               )}
             </div>
           </div>
         </div>
       )}
-    </>
+    </LoaderGuard>
   );
 }

@@ -1,68 +1,78 @@
 'use client';
 
-import { BarChart3, RefreshCw } from 'lucide-react';
+import { TrendingUp, Package, Users } from 'lucide-react';
 import { useAdminAnalytics } from '@/hooks/admin/useAdminAnalytics';
+import { LoaderGuard } from '@/components/ui/LoaderGuard';
+import { EmptyStateGuard } from '@/components/ui/EmptyStateGuard';
+import { EmptyState } from '@/components/ui/EmptyState';
+import PageHeader from '@/components/PageHeader';
 import StatsCards from './components/StatsCards';
 import OrderStatusBreakdown from './components/OrderStatusBreakdown';
-import ProductAnalytics from './components/ProductAnalytics';
-import SearchAnalytics from './components/SearchAnalytics';
-import EngagementMetrics from './components/EngagementMetrics';
-import AnalyticsSkeleton from './components/AnalyticsSkeleton';
+import TopProducts from './components/TopProducts';
+import TopSellers from './components/TopSellers';
+import UserMetrics from './components/UserMetrics';
 
 export default function AdminAnalyticsPage() {
-  const { data: stats, isLoading, refetch } = useAdminAnalytics();
+  const { data, isPending, error, refetch, isFetching } = useAdminAnalytics();
 
   return (
     <>
-      {isLoading && <AnalyticsSkeleton />}
-      {!isLoading && stats && (
-        <div className="space-y-5">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-purple-600" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-                <p className="text-sm text-gray-500">Detailed insights and performance metrics</p>
-              </div>
-            </div>
-            
-            <button
-              onClick={() => refetch()}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-          </div>
+      <PageHeader
+        title="Analytics"
+        description="Detailed insights and performance metrics"
+        onRefresh={refetch}
+        isRefreshing={isFetching}
+      />
 
-          {/* Stats Cards */}
-          <StatsCards 
-            revenue={stats.revenue} 
-            orders={stats.orders} 
-            products={stats.products} 
-            users={stats.users} 
-            growth={stats.growth}
-            selectedMetric="revenue"
-            onMetricSelect={() => {}}
-          />
+      <LoaderGuard isLoading={isPending} error={error} isEmpty={!data}>
+        {() => {
+          const sections = [
+            {
+              total: data!.overview.totalRevenue + data!.overview.totalOrders + data!.overview.totalProducts + data!.overview.totalUsers,
+              title: 'Overview',
+              icon: TrendingUp,
+              node: <StatsCards overview={data!.overview} />
+            },
+            {
+              total: data!.salesAnalytics.totalSales || 0,
+              title: 'Sales',
+              icon: Package,
+              node: <OrderStatusBreakdown salesAnalytics={data!.salesAnalytics} />
+            },
+            {
+              total: (data!.topPerformers.topProducts?.length || 0) + (data!.topPerformers.topSellers?.length || 0),
+              title: 'Top Performers',
+              icon: Package,
+              node: (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  <TopProducts topPerformers={data!.topPerformers} />
+                  <TopSellers topPerformers={data!.topPerformers} />
+                </div>
+              )
+            },
+            {
+              total: data!.userAnalytics.newUsers + data!.userAnalytics.activeUsers + data!.userAnalytics.returningUsers,
+              title: 'User Activity',
+              icon: Users,
+              node: <UserMetrics userAnalytics={data!.userAnalytics} />
+            }
+          ];
 
-          {/* Analytics Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <ProductAnalytics products={stats.products} reviews={stats.reviews} />
-            <SearchAnalytics search={stats.search} />
-          </div>
-
-          {/* Order Status Breakdown */}
-          <OrderStatusBreakdown orders={stats.orders} />
-
-          {/* Engagement Metrics */}
-          <EngagementMetrics engagement={stats.engagement} />
-        </div>
-      )}
+          return (
+            <>
+              {sections.map((section) => (
+                <EmptyStateGuard
+                  key={section.title}
+                  total={section.total}
+                  empty={<EmptyState icon={section.icon} title={`No ${section.title.toLowerCase()}`} />}
+                >
+                  {section.node}
+                </EmptyStateGuard>
+              ))}
+            </>
+          );
+        }}
+      </LoaderGuard>
     </>
   );
 }

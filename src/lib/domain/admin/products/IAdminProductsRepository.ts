@@ -13,6 +13,7 @@ export interface AdminProduct {
     id: string;
     businessName: string;
     email: string;
+    phone?: string;
   };
   categoryId: {
     id: string;
@@ -27,6 +28,31 @@ export interface AdminProduct {
   rejectionReason?: string;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Additional fields from Product model
+  brand?: string;
+  material?: string;
+  discountPercent?: number;
+  dimensions?: {
+    length?: number;
+    width?: number;
+    height?: number;
+  };
+  weight?: number;
+  colorOptions?: string[];
+  colors?: string[]; // Alias for colorOptions
+  warranty?: string;
+  tags?: string[];
+  isFeatured?: boolean;
+  viewCount?: number;
+  wishlistCount?: number;
+  totalSold?: number;
+  reviews?: {
+    average: number;
+    count: number;
+  };
+  averageRating?: number; // Alias for reviews.average
+  reviewCount?: number; // Alias for reviews.count
 }
 
 export interface ProductStats {

@@ -32,7 +32,6 @@ export class SellerNotificationsRepository {
       case '1year':
         startDate = new Date(now.getFullYear(), 0, 1);
         break;
-      case 'all':
       default:
         return null;
     }
@@ -41,125 +40,77 @@ export class SellerNotificationsRepository {
   }
 
   async getAllNotifications(sellerId: string, limit: number = 20) {
-    try {
-      const notifications = await NotificationService.getAll(sellerId, limit);
-      return notifications.map(n => ({
-        id: n._id.toString(),
-        type: n.type,
-        title: n.title,
-        message: n.message,
-        link: n.link,
-        read: n.read,
-        priority: n.priority,
-        createdAt: n.createdAt,
-        readAt: n.readAt,
-        metadata: n.metadata,
-      }));
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-      throw new NotificationsFetchError("Failed to fetch notifications");
-    }
+    const notifications = await NotificationService.getAll(sellerId, limit);
+    return notifications.map(n => ({
+      id: n._id.toString(),
+      type: n.type,
+      title: n.title,
+      message: n.message,
+      link: n.link,
+      read: n.read,
+      priority: n.priority,
+      createdAt: n.createdAt,
+      readAt: n.readAt,
+      metadata: n.metadata,
+    }));
   }
 
   async getNotificationById(sellerId: string, notificationId: string) {
-    try {
-      const notifications = await NotificationService.getAll(sellerId);
-      const notification = notifications.find(n => n._id.toString() === notificationId);
+    const notifications = await NotificationService.getAll(sellerId);
+    const notification = notifications.find(n => n._id.toString() === notificationId);
 
-      if (!notification) {
-        throw new NotificationNotFoundError(notificationId);
-      }
-
-      return {
-        id: notification._id.toString(),
-        type: notification.type,
-        title: notification.title,
-        message: notification.message,
-        link: notification.link,
-        read: notification.read,
-        priority: notification.priority,
-        createdAt: notification.createdAt,
-        readAt: notification.readAt,
-        metadata: notification.metadata,
-      };
-    } catch (error) {
-      if (error instanceof NotificationNotFoundError) {
-        throw error;
-      }
-      console.error("Error fetching notification:", error);
-      throw new NotificationsFetchError("Failed to fetch notification");
+    if (!notification) {
+      throw new NotificationNotFoundError(notificationId);
     }
+
+    return {
+      id: notification._id.toString(),
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      link: notification.link,
+      read: notification.read,
+      priority: notification.priority,
+      createdAt: notification.createdAt,
+      readAt: notification.readAt,
+      metadata: notification.metadata,
+    };
   }
 
   async getUnreadCount(sellerId: string) {
-    try {
-      return await NotificationService.getUnreadCount(sellerId);
-    } catch (error) {
-      console.error("Error fetching unread count:", error);
-      throw new NotificationsFetchError("Failed to get unread count");
-    }
+    return await NotificationService.getUnreadCount(sellerId);
   }
 
   async markAsRead(notificationId: string, sellerId: string) {
-    try {
-      await NotificationService.markAsRead(notificationId, sellerId);
-      await this.invalidateCache(sellerId);
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-      throw new NotificationUpdateError("Failed to mark notification as read");
-    }
+    await NotificationService.markAsRead(notificationId, sellerId);
+    await this.invalidateCache(sellerId);
   }
 
   async markAllAsRead(sellerId: string) {
-    try {
-      await NotificationService.markAllAsRead(sellerId);
-      await this.invalidateCache(sellerId);
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-      throw new NotificationUpdateError("Failed to mark all notifications as read");
-    }
+    await NotificationService.markAllAsRead(sellerId);
+    await this.invalidateCache(sellerId);
   }
 
   async deleteNotification(notificationId: string, sellerId: string) {
-    try {
-      await NotificationService.dismiss(notificationId, sellerId);
-      await this.invalidateCache(sellerId);
-    } catch (error) {
-      console.error("Error deleting notification:", error);
-      throw new NotificationDeleteError("Failed to delete notification");
-    }
+    await NotificationService.dismiss(notificationId, sellerId);
+    await this.invalidateCache(sellerId);
   }
 
   async bulkDeleteNotifications(notificationIds: string[], sellerId: string) {
-    try {
-      for (const notificationId of notificationIds) {
-        await NotificationService.dismiss(notificationId, sellerId);
-      }
-      await this.invalidateCache(sellerId);
-      return notificationIds.length;
-    } catch (error) {
-      console.error("Error bulk deleting notifications:", error);
-      throw new NotificationDeleteError("Failed to delete notifications");
+    for (const notificationId of notificationIds) {
+      await NotificationService.dismiss(notificationId, sellerId);
     }
+    await this.invalidateCache(sellerId);
+    return notificationIds.length;
   }
 
   async clearAllNotifications(sellerId: string) {
-    try {
-      await NotificationService.cleanupOldNotifications(0);
-      await this.invalidateCache(sellerId);
-    } catch (error) {
-      console.error("Error clearing all notifications:", error);
-      throw new NotificationDeleteError("Failed to clear all notifications");
-    }
+    await NotificationService.cleanupOldNotifications(0);
+    await this.invalidateCache(sellerId);
   }
 
   private async invalidateCache(sellerId: string) {
-    try {
-      await invalidateClientCache(`notifications:seller:${sellerId}`);
-    } catch (cacheError) {
-      console.error('Failed to invalidate notification cache:', cacheError);
-      // Don't throw here as cache invalidation failure shouldn't break the main operation
-    }
+    await invalidateClientCache(`notifications:seller:${sellerId}`);
   }
 
   applyFilters(notifications: any[], filters: {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Calendar, Edit2, Save, X, CreditCard, Truck, ExternalLink, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { PaymentDeliveryInfoProps } from '@/types/sellerOrder';
+import { PaymentDeliveryInfoProps } from '@/types/seller/orders';
 
 export function PaymentDeliveryInfo({ order, isCancelled, updating, onSaveTracking }: PaymentDeliveryInfoProps) {
   const [isEditingTracking, setIsEditingTracking] = useState(false);
@@ -157,7 +157,7 @@ export function PaymentDeliveryInfo({ order, isCancelled, updating, onSaveTracki
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
-                  })}
+                  }) as unknown as string}
                 </span>
               </div>
             </div>
@@ -169,7 +169,11 @@ export function PaymentDeliveryInfo({ order, isCancelled, updating, onSaveTracki
                 <Clock className="w-3 h-3" />
                 Estimated Delivery
               </label>
-              <p className="text-sm font-medium text-gray-900">{order.estimatedDelivery}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {order.estimatedDelivery instanceof Date 
+                  ? order.estimatedDelivery.toLocaleDateString('en-IN')
+                  : new Date(order.estimatedDelivery).toLocaleDateString('en-IN')}
+              </p>
             </div>
           )}
         </div>

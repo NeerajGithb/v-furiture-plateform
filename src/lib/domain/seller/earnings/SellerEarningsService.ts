@@ -10,8 +10,8 @@ import {
 } from "./SellerEarningsErrors";
 
 export class SellerEarningsService {
-  async getEarningsData(sellerId: string, query: SellerEarningsQueryRequest = { period: '30days', page: 1, limit: 20, status: 'all' }) {
-    const { period = '30days', action } = query;
+  async getEarningsData(sellerId: string, query: Partial<SellerEarningsQueryRequest> = {}) {
+    const { period = '30d', action } = query;
 
     // If specific action is requested, return only that data
     if (action) {
@@ -74,7 +74,7 @@ export class SellerEarningsService {
     return await sellerEarningsRepository.createPayoutRequest(sellerId, amount, bankDetails);
   }
 
-  async getEarningsSummary(sellerId: string, period: string = '30days') {
+  async getEarningsSummary(sellerId: string, period: string = '30d') {
     return await sellerEarningsRepository.getEarningsSummary(sellerId, period);
   }
 
@@ -91,7 +91,7 @@ export class SellerEarningsService {
   }
 
   async exportEarnings(sellerId: string, exportOptions: EarningsExportRequest) {
-    const { period, format } = exportOptions;
+    const { period = '30d', format } = exportOptions;
     
     const data = await sellerEarningsRepository.getEarningsExportData(sellerId, period);
 

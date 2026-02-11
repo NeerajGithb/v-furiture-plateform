@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { useGlobalFilterStore } from '@/stores/globalFilterStore';
 import {
   useSellerNotifications,
   useMarkNotificationAsRead,
@@ -10,27 +8,27 @@ import {
   usePerformBulkNotificationAction,
   useClearAllNotifications
 } from '@/hooks/seller/useSellerNotifications';
-import { NotificationsSkeleton } from './components/NotificationsSkeleton';
-import { NotificationsHeader } from './components/NotificationsHeader';
-import { NotificationsPagination } from './components/NotificationsPagination';
+import { useNotificationsUIStore } from '@/stores/seller/notificationsUIStore';
+import { LoaderGuard } from '@/components/ui/LoaderGuard';
+import PageHeader from '@/components/PageHeader';
+import { Pagination } from '@/components/ui/Pagination';
+import { Trash2, CheckCheck } from 'lucide-react';
 import { NotificationsList } from './components/NotificationsList';
 import { NotificationsStats } from './components/NotificationsStats';
 
 export default function SellerNotificationsPage() {
-  const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const currentPage = useNotificationsUIStore(s => s.currentPage);
+  const setCurrentPage = useNotificationsUIStore(s => s.setCurrentPage);
+  const selectedNotifications = useNotificationsUIStore(s => s.selectedNotifications);
+  const toggleSelection = useNotificationsUIStore(s => s.toggleSelection);
+  const selectAll = useNotificationsUIStore(s => s.selectAll);
+  const clearSelection = useNotificationsUIStore(s => s.clearSelection);
 
-  // Global filters
-  const { page, setPage } = useGlobalFilterStore();
+  const { data, isPending, error, refetch, isFetching } = useSellerNotifications();
 
-  // React Query hooks
-  const { data: notificationsData, isLoading, refetch } = useSellerNotifications({ page });
+  const notifications = data?.notifications || [];
+  const pagination = data?.pagination;
 
-  // Use data directly from API
-  const notifications = notificationsData?.notifications || [];
-  const pagination = notificationsData?.pagination;
-
-  // Create mock stats from notifications data
   const stats = notifications.length > 0 ? {
     total: notifications.length,
     unread: notifications.filter(n => !n.read).length,
@@ -76,17 +74,10 @@ export default function SellerNotificationsPage() {
   const performBulkAction = usePerformBulkNotificationAction();
   const clearAll = useClearAllNotifications();
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await refetch();
-    setTimeout(() => setRefreshing(false), 500);
-  };
-
   const handleBulkDelete = async () => {
     if (selectedNotifications.length === 0) return;
-
     await bulkDelete.mutateAsync({ notificationIds: selectedNotifications });
-    setSelectedNotifications([]);
+    clearSelection();
   };
 
   const handleMarkAllAsRead = async () => {
@@ -98,72 +89,75 @@ export default function SellerNotificationsPage() {
 
   const handleClearAll = async () => {
     await clearAll.mutateAsync();
-    setSelectedNotifications([]);
+    clearSelection();
   };
 
-  const toggleNotificationSelection = (notificationId: string) => {
-    setSelectedNotifications(prev =>
-      prev.includes(notificationId)
-        ? prev.filter(id => id !== notificationId)
-        : [...prev, notificationId]
-    );
-  };
-
-  const selectAllNotifications = () => {
-    setSelectedNotifications(notifications.map(n => n._id));
-  };
-
-  const clearSelection = () => {
-    setSelectedNotifications([]);
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
+  const handleSelectAll = () => {
+    selectAll(notifications.map(n => n.id));
   };
 
   return (
     <>
-      {isLoading && <NotificationsSkeleton />}
-      {!isLoading && (
-        <div className="space-y-6 max-w-7xl mx-auto p-6">
-          <NotificationsHeader
-            stats={stats}
-            selectedNotifications={selectedNotifications}
-            onRefresh={handleRefresh}
-            onMarkAllAsRead={handleMarkAllAsRead}
-            onBulkDelete={handleBulkDelete}
-            onClearAll={handleClearAll}
-            refreshing={refreshing}
-            isMarkingAllAsRead={performBulkAction.isPending}
-            isBulkDeleting={bulkDelete.isPending}
-            isClearingAll={clearAll.isPending}
-          />
+      <PageHeader
+        title="Notifications"
+        description="Manage your notifications and alerts"
+        onRefresh={refetch}
+        isRefreshing={isFetching}
+        actions={
+          <div className="flex items-center gap-2">
+            {selectedNotifications.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkDelete.isPending}
+                className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700 transition-colors disabled:opacity-50 text-sm font-medium"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete ({selectedNotifications.length})
+              </button>
+            )}
+            <button
+              onClick={handleMarkAllAsRead}
+              disabled={performBulkAction.isPending}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 text-sm font-medium"
+            >
+              <CheckCheck className="w-4 h-4" />
+              Mark All Read
+            </button>
+          </div>
+        }
+      />
 
-          <NotificationsStats stats={stats} />
+      <LoaderGuard 
+        isLoading={isPending} 
+        error={error}
+        isEmpty={!data || (data.pagination?.total || 0) === 0}
+        emptyMessage="No notifications"
+      >
+        {() => (
+          <div className="space-y-6 max-w-7xl mx-auto">
+            <NotificationsStats stats={stats} />
 
-          <NotificationsList
-            notifications={notifications}
-            selectedNotifications={selectedNotifications}
-            onToggleSelection={toggleNotificationSelection}
-            onSelectAll={selectAllNotifications}
-            onClearSelection={clearSelection}
-            onMarkAsRead={(id: string) => markAsRead.mutate(id)}
-            onDelete={(id: string) => deleteNotification.mutate(id)}
-            isMarkingAsRead={markAsRead.isPending}
-            isDeleting={deleteNotification.isPending}
-          />
-
-          {pagination && pagination.totalPages > 1 && (
-            <NotificationsPagination
-              currentPage={pagination.page}
-              totalPages={pagination.totalPages}
-              totalItems={pagination.total}
-              itemsPerPage={pagination.limit}
-              onPageChange={handlePageChange}
+            <NotificationsList
+              notifications={notifications}
+              selectedNotifications={selectedNotifications}
+              onToggleSelection={toggleSelection}
+              onSelectAll={handleSelectAll}
+              onClearSelection={clearSelection}
+              onMarkAsRead={(id: string) => markAsRead.mutate(id)}
+              onDelete={(id: string) => deleteNotification.mutate(id)}
+              isMarkingAsRead={markAsRead.isPending}
+              isDeleting={deleteNotification.isPending}
             />
-          )}
-        </div>
-      )}
+
+            {pagination && (
+              <Pagination 
+                pagination={pagination} 
+                onPageChange={setCurrentPage} 
+              />
+            )}
+          </div>
+        )}
+      </LoaderGuard>
     </>
   );
 }

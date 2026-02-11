@@ -1,7 +1,81 @@
-import { ProductFilters, CreateProductData, UpdateProductData, BulkUpdateData, ProductStats } from "./SellerProductsRepository";
+export interface ProductFilters {
+  sellerId: string;
+  search?: string;
+  status?: string;
+  period?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface ProductStats {
+  total: number;
+  published: number;
+  draft: number;
+  outOfStock: number;
+  lowStock: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  totalViews: number;
+  totalSold: number;
+  totalWishlisted: number;
+}
+
+export interface CreateProductData {
+  name: string;
+  description: string;
+  categoryId: string;
+  subCategoryId?: string;
+  originalPrice: number;
+  finalPrice: number;
+  discountPercent?: number;
+  inStockQuantity: number;
+  mainImage: {
+    url: string;
+    publicId: string;
+  };
+  galleryImages?: Array<{
+    url: string;
+    publicId: string;
+  }>;
+  sku?: string;
+  isPublished?: boolean;
+}
+
+export interface UpdateProductData {
+  name?: string;
+  description?: string;
+  categoryId?: string;
+  subCategoryId?: string;
+  originalPrice?: number;
+  finalPrice?: number;
+  discountPercent?: number;
+  inStockQuantity?: number;
+  mainImage?: {
+    url: string;
+    publicId: string;
+  };
+  galleryImages?: Array<{
+    url: string;
+    publicId: string;
+  }>;
+  isPublished?: boolean;
+}
+
+export interface BulkUpdateData {
+  productIds: string[];
+  updates: {
+    isPublished?: boolean;
+    status?: string;
+    inStockQuantity?: number;
+    finalPrice?: number;
+  };
+}
 
 export interface SellerProduct {
-  _id: string;
+  id: string;
   name: string;
   description: string;
   categoryId: string;
@@ -12,8 +86,14 @@ export interface SellerProduct {
   finalPrice: number;
   discountPercent: number;
   inStockQuantity: number;
-  mainImage: any;
-  galleryImages: any[];
+  mainImage: {
+    url: string;
+    publicId: string;
+  };
+  galleryImages: Array<{
+    url: string;
+    publicId: string;
+  }>;
   isPublished: boolean;
   status: string;
   rejectionReason?: string;
@@ -22,7 +102,10 @@ export interface SellerProduct {
   wishlistCount: number;
   totalCart: number;
   ratings: number;
-  reviews: any;
+  reviews: {
+    averageRating: number;
+    totalReviews: number;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,5 +149,5 @@ export interface ISellerProductsRepository {
   bulkUpdate(sellerId: string, data: BulkUpdateData): Promise<BulkUpdateResult>;
   
   // Export
-  getProductsForExport(sellerId: string, search?: string, status?: string): Promise<any[]>;
+  getProductsForExport(sellerId: string, search?: string, status?: string): Promise<SellerProduct[]>;
 }

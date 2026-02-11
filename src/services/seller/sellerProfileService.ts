@@ -4,7 +4,7 @@ import {
   UpdateProfileRequest,
   ChangePasswordRequest,
   ProfileStats
-} from "@/types/sellerProfile";
+} from "@/types/seller/profile";
 
 class SellerProfileService extends BasePrivateService {
   constructor() {

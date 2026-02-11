@@ -1,8 +1,8 @@
 import { z } from "zod";
+import { PeriodSchema } from "../../shared/commonSchemas";
 
 export const SellerDashboardQuerySchema = z.object({
-  period: z.enum(['30min', '1hour', '1day', '7days', '30days', '1year', 'all']).default('all'),
-  section: z.enum(['overview', 'earnings', 'orders', 'products', 'reviews']).optional(),
+  period: PeriodSchema.optional(),
 });
 
 export type SellerDashboardQueryRequest = z.infer<typeof SellerDashboardQuerySchema>;

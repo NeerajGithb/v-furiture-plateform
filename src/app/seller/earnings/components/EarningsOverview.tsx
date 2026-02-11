@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Package, CreditCard, X, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
-import { EarningsOverviewProps, PayoutMethod } from '@/types/sellerEarnings';
+import { EarningsOverviewProps, PayoutMethod } from '@/types/seller/earnings';
 
 interface PayoutRequestModalProps {
   isOpen: boolean;

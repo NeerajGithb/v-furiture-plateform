@@ -1,27 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { sellerProfileService } from "@/services/seller/sellerProfileService";
 import { 
   UpdateProfileRequest,
   ChangePasswordRequest
-} from "@/types/sellerProfile";
+} from "@/types/seller/profile";
 
-export const useSellerProfile = (enabled: boolean = true) => {
+export const useSellerProfile = () => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+  
   return useQuery({
     queryKey: ["seller-profile"],
     queryFn: () => sellerProfileService.getProfile(),
-    enabled: enabled,
+    enabled: !!seller && !authLoading,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 };
 
-export const useSellerProfileStats = (enabled: boolean = true) => {
+export const useSellerProfileStats = () => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+  
   return useQuery({
     queryKey: ["seller-profile-stats"],
     queryFn: () => sellerProfileService.getProfileStats(),
-    enabled: enabled,
+    enabled: !!seller && !authLoading,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });

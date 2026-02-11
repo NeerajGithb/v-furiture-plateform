@@ -1,5 +1,5 @@
 import { Store, Users, CheckCircle, Clock } from "lucide-react";
-import { SellerStats } from "@/lib/domain/admin/sellers/IAdminSellersRepository";
+import type { SellerStats } from "@/types/admin/sellers";
 import { Loader } from "@/components/ui/Loader";
 
 interface SellersStatsProps {

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import { authService } from "@/services/authService";
 import { useRouter } from "next/navigation";
@@ -110,6 +110,9 @@ export const useCurrentSeller = (enabled: boolean = true) => {
     },
     enabled,
     retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 };
 
@@ -133,6 +136,9 @@ export const useCurrentAdmin = (enabled: boolean = true) => {
     },
     enabled,
     retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 };
 
@@ -140,15 +146,24 @@ export const useCurrentAdmin = (enabled: boolean = true) => {
 export const useAuthLogout = () => {
   const router = useRouter();
   const { clearAuth } = useAuthStore();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (userType: 'seller' | 'admin') => authService.logout(userType),
     onSuccess: () => {
       clearAuth();
+      // Remove all queries to prevent refetch attempts
+      queryClient.removeQueries({ queryKey: ['current-seller'] });
+      queryClient.removeQueries({ queryKey: ['current-admin'] });
+      queryClient.clear(); // Clear all queries
       router.push('/');
     },
     onError: (error: Error) => {
       clearAuth();
+      // Remove all queries even on error
+      queryClient.removeQueries({ queryKey: ['current-seller'] });
+      queryClient.removeQueries({ queryKey: ['current-admin'] });
+      queryClient.clear();
       router.push('/');
       toast.error(error.message);
     },

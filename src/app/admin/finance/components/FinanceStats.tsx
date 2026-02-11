@@ -1,6 +1,6 @@
 import { IndianRupee, TrendingUp, TrendingDown, Wallet, CreditCard, Clock } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
-import { FinancialSummary } from '@/types/finance';
+import { FinancialSummary } from '@/types/admin/finance';
 
 interface FinanceStatsProps {
     summary: FinancialSummary;

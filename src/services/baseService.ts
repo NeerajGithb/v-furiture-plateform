@@ -141,11 +141,6 @@ export abstract class BaseService {
       // Only log in development and for debugging
       if (process.env.NODE_ENV === 'development') {
         console.log('[API Raw Response]:', rawData);
-        console.log(`[API] ${requestInfo?.method || 'REQUEST'} ${requestInfo?.url || response.url}:`, {
-          status: response.status,
-          success: rawData.success,
-          data: rawData.data ? 'Present' : 'None'
-        });
       }
       
       return rawData as ApiResponse<T>;
@@ -309,6 +304,24 @@ export abstract class BaseService {
         options?.skipRetry,
       );
     });
+  }
+
+  // GET paginated data - handles pagination field separately
+  protected async getPaginated<T>(
+    endpoint: string,
+    params?: Record<string, any>,
+    options?: RequestOptions,
+  ): Promise<{ data: T[]; pagination: any }> {
+    const response = await this.get<T[]>(endpoint, params, options) as any;
+    
+    if (response.success) {
+      return {
+        data: response.data,
+        pagination: response.pagination
+      };
+    } else {
+      throw new Error(response.error?.message || "Request failed");
+    }
   }
 
   // POST with JSON or FormData body

@@ -31,6 +31,17 @@ export const GET = withAdminAuth(
           return ApiResponseBuilder.success(stats);
         }
 
+        // Check if this is an export request
+        if (queryParams.action === "export") {
+          const validatedQuery = AdminProductsQuerySchema.parse(queryParams);
+          const result = await adminProductsService.getProducts(validatedQuery);
+          return ApiResponseBuilder.success({
+            products: result.data,
+            count: result.data.length,
+            exportedAt: new Date().toISOString(),
+          });
+        }
+
         // Default: get products list
         const validatedQuery = AdminProductsQuerySchema.parse(queryParams);
         const result = await adminProductsService.getProducts(validatedQuery);

@@ -1,10 +1,5 @@
-import { User, Phone, MapPin, Mail } from 'lucide-react';
-
-interface CustomerInfoProps {
-  customerName?: string;
-  customerEmail?: string;
-  customerPhone?: string;
-}
+import { User, Phone, Mail } from 'lucide-react';
+import { CustomerInfoProps } from '@/types/seller/orders';
 
 export function CustomerInfo({ customerName, customerEmail, customerPhone }: CustomerInfoProps) {
   return (

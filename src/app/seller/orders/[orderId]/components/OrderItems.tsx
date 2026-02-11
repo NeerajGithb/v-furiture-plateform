@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { Package, ExternalLink, Eye, Star } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
-import { OrderItemsProps } from '@/types/sellerOrder';
+import { OrderItemsProps } from '@/types/seller/orders';
 
 export function OrderItems({ items }: OrderItemsProps) {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -21,7 +21,7 @@ export function OrderItems({ items }: OrderItemsProps) {
 
       <div className="space-y-4">
         {items.map((item, index) => (
-          <div key={item._id || index} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
+          <div key={item.id || index} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
             <div className="w-20 h-20 bg-white rounded-lg flex-shrink-0 overflow-hidden border border-gray-200">
               {item.productImage || item.productId?.mainImage?.url ? (
                 <Image
@@ -68,9 +68,9 @@ export function OrderItems({ items }: OrderItemsProps) {
                   )}
 
                   <div className="flex items-center gap-2">
-                    {item.productId?._id && (
+                    {item.productId?.id && (
                       <button
-                        onClick={() => window.open(`/seller/products/${item.productId._id}`, '_blank')}
+                        onClick={() => window.open(`/seller/products/${item.productId?.id}`, '_blank')}
                         className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
                       >
                         <Eye className="w-3 h-3" />
@@ -80,7 +80,7 @@ export function OrderItems({ items }: OrderItemsProps) {
                     
                     {item.productId?.slug && (
                       <button
-                        onClick={() => window.open(`/products/${item.productId.slug}`, '_blank')}
+                        onClick={() => window.open(`/products/${item.productId?.slug}`, '_blank')}
                         className="text-xs text-gray-600 hover:text-gray-700 flex items-center gap-1"
                       >
                         <ExternalLink className="w-3 h-3" />

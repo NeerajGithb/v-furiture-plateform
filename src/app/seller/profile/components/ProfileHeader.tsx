@@ -1,5 +1,5 @@
 import { RefreshCw, Settings } from 'lucide-react';
-import { SellerProfile } from '@/types/sellerProfile';
+import { SellerProfile } from '@/types/seller/profile';
 
 interface ProfileHeaderProps {
   profile?: SellerProfile;

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -16,12 +17,11 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
-import { useNavigate } from '@/components/NavigationLoader';
-import { useSellerUnreadNotificationsCount } from '@/hooks/seller/useSellerNotificationsData';
+import { useSellerNotificationUnreadCount } from '@/hooks/seller/useSellerNotifications';
 import { useSidebar } from './SellerLayoutContent';
 
 const menuItems = [
-  { label: 'Overview', href: '/seller/dashboard', icon: LayoutDashboard },
+  { label: 'Dashboard', href: '/seller/dashboard', icon: LayoutDashboard },
   { label: 'Products', href: '/seller/products', icon: Package },
   { label: 'Orders', href: '/seller/orders', icon: ShoppingCart },
   { label: 'Inventory', href: '/seller/inventory', icon: Upload },
@@ -33,9 +33,8 @@ const menuItems = [
 
 export default function SellerSidebar() {
   const pathname = usePathname();
-  const navigate = useNavigate();
   const { logout } = useAuthGuard();
-  const { data: unreadCount } = useSellerUnreadNotificationsCount();
+  const { data: unreadCount } = useSellerNotificationUnreadCount();
   const { isCompact, setIsCompact } = useSidebar();
 
   const handleLogout = async () => {
@@ -48,21 +47,18 @@ export default function SellerSidebar() {
         } bg-white border-r border-gray-200 h-screen fixed left-0 top-0 flex flex-col transition-all duration-300 z-50`}
     >
       {/* Header */}
-      <div className={`h-16 flex items-center border-b border-gray-100 ${isCompact ? 'justify-center px-2' : 'px-6'}`}>
+      <div className={`h-14 flex items-center border-b border-gray-200 ${isCompact ? 'justify-center px-2' : 'px-4'}`}>
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Store className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 bg-gray-900 rounded-md flex items-center justify-center flex-shrink-0">
+            <Store className="w-4 h-4 text-white" />
           </div>
           {!isCompact && (
-            <div>
-              <h1 className="text-sm font-bold text-gray-900 leading-tight whitespace-nowrap">Seller Portal</h1>
-              <p className="text-xs text-gray-500">Management</p>
-            </div>
+            <span className="font-semibold text-gray-900 whitespace-nowrap">Seller Portal</span>
           )}
         </div>
       </div>
 
-      {/* Toggle Button */}
+      {/* Toggle */}
       <button
         onClick={() => setIsCompact(!isCompact)}
         className="absolute -right-3 top-16 w-6 h-6 bg-white border border-gray-200 hover:bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors shadow-sm z-10"
@@ -70,19 +66,19 @@ export default function SellerSidebar() {
         {isCompact ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
       </button>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-6 space-y-0.5 overflow-y-auto">
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
         {menuItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
           const Icon = item.icon;
-          const showBadge = item.showBadge && (unreadCount ?? 0) > 0;
+          const showBadge = item.showBadge && (unreadCount || 0) > 0;
 
           return (
-            <button
+            <Link
               key={item.href}
-              onClick={() => navigate.push(item.href)}
-              className={`w-full flex items-center gap-3 rounded-md transition-colors text-sm font-medium ${isActive
-                ? 'bg-gray-100 text-gray-900'
+              href={item.href}
+              className={`flex items-center gap-3 rounded-md text-sm transition-colors relative ${isActive
+                ? 'bg-gray-100 text-gray-900 font-medium'
                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 } ${isCompact ? 'justify-center py-2.5 px-2' : 'px-3 py-2'}`}
               title={isCompact ? item.label : ''}
@@ -90,10 +86,10 @@ export default function SellerSidebar() {
               <Icon className={`w-4 h-4 ${isActive ? 'text-gray-900' : 'text-gray-500'} flex-shrink-0`} />
               {!isCompact && (
                 <>
-                  <span className="flex-1 text-left">{item.label}</span>
+                  <span>{item.label}</span>
                   {showBadge && (
-                    <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ring-2 ring-white">
-                      {unreadCount > 99 ? '99+' : unreadCount}
+                    <span className="ml-auto bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                      {(unreadCount || 0) > 99 ? '99+' : unreadCount}
                     </span>
                   )}
                 </>
@@ -101,18 +97,18 @@ export default function SellerSidebar() {
               {isCompact && showBadge && (
                 <span className="absolute top-1 right-1 w-2 h-2 bg-rose-600 rounded-full ring-2 ring-white" />
               )}
-            </button>
+            </Link>
           );
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="p-4 border-t border-gray-100">
+      {/* Footer */}
+      <div className="p-3 border-t border-gray-200">
         <button
           onClick={handleLogout}
-          className={`flex items-center gap-3 rounded-md text-gray-600 hover:bg-rose-50 hover:text-rose-700 transition-colors w-full text-sm font-medium ${isCompact ? 'justify-center py-2.5 px-2' : 'px-3 py-2'
+          className={`flex items-center gap-3 rounded-md text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 w-full transition-colors ${isCompact ? 'justify-center py-2.5 px-2' : 'px-3 py-2'
             }`}
-          title={isCompact ? 'Sign Out' : ''}
+          title="Sign Out"
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
           {!isCompact && <span>Sign Out</span>}

@@ -1,74 +1,66 @@
 import SubCategory from "@/models/SubCategory";
 import { SubcategoryNotFoundError, SubcategoryFetchError } from "./SellerSubcategoriesErrors";
 
+interface PopulatedSubcategory {
+  _id: any;
+  name: string;
+  slug: string;
+  categoryId: {
+    _id: any;
+    name: string;
+  };
+}
+
 export class SellerSubcategoriesRepository {
   async getAllSubcategories() {
-    try {
-      const subcategories = await SubCategory.find({})
-        .select('_id name slug categoryId')
-        .populate('categoryId', 'name')
-        .sort({ name: 1 })
-        .lean();
+    const subcategories = await SubCategory.find({})
+      .select('_id name slug categoryId')
+      .populate('categoryId', 'name')
+      .sort({ name: 1 })
+      .lean() as unknown as PopulatedSubcategory[];
 
-      return subcategories.map(subcategory => ({
-        id: subcategory._id.toString(),
-        name: subcategory.name,
-        slug: subcategory.slug,
-        categoryId: subcategory.categoryId._id.toString(),
-        categoryName: subcategory.categoryId.name,
-      }));
-    } catch (error) {
-      console.error("Error fetching subcategories:", error);
-      throw new SubcategoryFetchError("Failed to fetch subcategories");
-    }
+    return subcategories.map(subcategory => ({
+      id: subcategory._id.toString(),
+      name: subcategory.name,
+      slug: subcategory.slug,
+      categoryId: subcategory.categoryId._id.toString(),
+      categoryName: subcategory.categoryId.name,
+    }));
   }
 
   async getSubcategoriesByCategory(categoryId: string) {
-    try {
-      const subcategories = await SubCategory.find({ categoryId })
-        .select('_id name slug categoryId')
-        .populate('categoryId', 'name')
-        .sort({ name: 1 })
-        .lean();
+    const subcategories = await SubCategory.find({ categoryId })
+      .select('_id name slug categoryId')
+      .populate('categoryId', 'name')
+      .sort({ name: 1 })
+      .lean() as unknown as PopulatedSubcategory[];
 
-      return subcategories.map(subcategory => ({
-        id: subcategory._id.toString(),
-        name: subcategory.name,
-        slug: subcategory.slug,
-        categoryId: subcategory.categoryId._id.toString(),
-        categoryName: subcategory.categoryId.name,
-      }));
-    } catch (error) {
-      console.error("Error fetching subcategories by category:", error);
-      throw new SubcategoryFetchError("Failed to fetch subcategories");
-    }
+    return subcategories.map(subcategory => ({
+      id: subcategory._id.toString(),
+      name: subcategory.name,
+      slug: subcategory.slug,
+      categoryId: subcategory.categoryId._id.toString(),
+      categoryName: subcategory.categoryId.name,
+    }));
   }
 
   async getSubcategoryById(subcategoryId: string) {
-    try {
-      const subcategory = await SubCategory.findById(subcategoryId)
-        .select('_id name slug categoryId')
-        .populate('categoryId', 'name')
-        .lean();
+    const subcategory = await SubCategory.findById(subcategoryId)
+      .select('_id name slug categoryId')
+      .populate('categoryId', 'name')
+      .lean() as PopulatedSubcategory | null;
 
-      if (!subcategory) {
-        throw new SubcategoryNotFoundError(subcategoryId);
-      }
-
-      return {
-        id: subcategory._id.toString(),
-        name: subcategory.name,
-        slug: subcategory.slug,
-        categoryId: subcategory.categoryId._id.toString(),
-        categoryName: subcategory.categoryId.name,
-      };
-    } catch (error) {
-      if (error instanceof SubcategoryNotFoundError) {
-        throw error;
-      }
-      console.error("Error fetching subcategory:", error);
-      throw new SubcategoryFetchError("Failed to fetch subcategory");
+    if (!subcategory) {
+      throw new SubcategoryNotFoundError(subcategoryId);
     }
+
+    return {
+      id: subcategory._id.toString(),
+      name: subcategory.name,
+      slug: subcategory.slug,
+      categoryId: subcategory.categoryId._id.toString(),
+      categoryName: subcategory.categoryId.name,
+    };
   }
 }
 

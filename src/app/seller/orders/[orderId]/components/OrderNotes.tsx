@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FileText, Edit2, Save, X, Plus, Clock } from 'lucide-react';
-import { OrderNotesProps } from '@/types/sellerOrder';
+import { OrderNotesProps } from '@/types/seller/orders';
 
 export function OrderNotes({ notes: initialNotes, isCancelled, updating, onSave }: OrderNotesProps) {
   const [isEditing, setIsEditing] = useState(false);

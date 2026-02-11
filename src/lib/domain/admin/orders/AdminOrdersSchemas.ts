@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PeriodSchema, GroupBySchema, SortOrderSchema } from "../../shared/commonSchemas";
 
 // Order status enum
 export const OrderStatusSchema = z.enum([
@@ -12,6 +13,7 @@ export type PaymentStatus = z.infer<typeof PaymentStatusSchema>;
 
 // Query schemas
 export const AdminOrdersQuerySchema = z.object({
+  period: PeriodSchema.optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(10),
   search: z.string().optional(),
@@ -22,7 +24,7 @@ export const AdminOrdersQuerySchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   sortBy: z.enum(["createdAt", "updatedAt", "totalAmount", "orderNumber"]).default("createdAt"),
-  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  sortOrder: SortOrderSchema.default("desc"),
   minAmount: z.coerce.number().min(0).optional(),
   maxAmount: z.coerce.number().min(0).optional(),
 });
@@ -42,8 +44,8 @@ export const OrderPaymentUpdateSchema = z.object({
 
 // Order stats schema
 export const OrderStatsQuerySchema = z.object({
-  period: z.enum(["7d", "30d", "90d", "1y"]).default("30d"),
-  groupBy: z.enum(["day", "week", "month"]).default("day"),
+  period: PeriodSchema.default("30d"),
+  groupBy: GroupBySchema.default("day"),
 });
 
 // Export schema

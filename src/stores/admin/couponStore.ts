@@ -1,34 +1,45 @@
 import { create } from 'zustand';
-import { CouponUIState } from '@/types';
 
-export const useCouponUIStore = create<CouponUIState>((set) => ({
-  // Initial state
-  activeTab: 'all',
-  showFilters: false,
+interface CouponUIState {
+  currentPage: number;
+  selectedCoupons: string[];
+  showCreateModal: boolean;
+  showEditModal: boolean;
+  editingCoupon: any | null;
+
+  setCurrentPage: (page: number) => void;
+  setSelectedCoupons: (coupons: string[]) => void;
+  toggleCouponSelection: (couponId: string) => void;
+  clearSelection: () => void;
+  setShowCreateModal: (show: boolean) => void;
+  setShowEditModal: (show: boolean) => void;
+  setEditingCoupon: (coupon: any | null) => void;
+}
+
+export const useCouponUIStore = create<CouponUIState>((set, get) => ({
+  currentPage: 1,
   selectedCoupons: [],
-  
   showCreateModal: false,
   showEditModal: false,
-  showDeleteModal: false,
   editingCoupon: null,
+
+  setCurrentPage: (page: number) => set({ currentPage: Math.max(1, page) }),
   
-  // Actions
-  setActiveTab: (tab) => set({ activeTab: tab }),
-  setShowFilters: (show) => set({ showFilters: show }),
-  setSelectedCoupons: (coupons) => set({ selectedCoupons: coupons }),
+  setSelectedCoupons: (coupons: string[]) => set({ selectedCoupons: coupons }),
   
-  toggleCouponSelection: (couponId) => set((state) => ({
-    selectedCoupons: state.selectedCoupons.includes(couponId)
-      ? state.selectedCoupons.filter(id => id !== couponId)
-      : [...state.selectedCoupons, couponId]
-  })),
+  toggleCouponSelection: (couponId: string) => {
+    const { selectedCoupons } = get();
+    const isSelected = selectedCoupons.includes(couponId);
+    if (isSelected) {
+      set({ selectedCoupons: selectedCoupons.filter(id => id !== couponId) });
+    } else {
+      set({ selectedCoupons: [...selectedCoupons, couponId] });
+    }
+  },
   
-  selectAllCoupons: (couponIds) => set({ selectedCoupons: couponIds }),
   clearSelection: () => set({ selectedCoupons: [] }),
   
-  // Modal actions
-  setShowCreateModal: (show) => set({ showCreateModal: show }),
-  setShowEditModal: (show) => set({ showEditModal: show }),
-  setShowDeleteModal: (show) => set({ showDeleteModal: show }),
-  setEditingCoupon: (coupon) => set({ editingCoupon: coupon }),
+  setShowCreateModal: (show: boolean) => set({ showCreateModal: show }),
+  setShowEditModal: (show: boolean) => set({ showEditModal: show }),
+  setEditingCoupon: (coupon: any | null) => set({ editingCoupon: coupon }),
 }));

@@ -21,7 +21,7 @@ export class SellerProductsService {
 
     // Format products to match frontend expectations
     const formattedProducts = result.products.map((product: any) => ({
-      _id: product._id.toString(),
+      id: product._id.toString(),
       name: product.name,
       description: product.description,
       categoryId: product.categoryId?.name || 'Uncategorized',
@@ -86,58 +86,98 @@ export class SellerProductsService {
     return await this.repository.delete(productId, sellerId);
   }
 
+  async duplicateProduct(productId: string, sellerId: string) {
+    return await this.repository.duplicate(productId, sellerId);
+  }
+
+  async getProductAnalytics(productId: string, sellerId: string, period?: string) {
+    return {
+      views: [],
+      sales: [],
+      topPerformers: [],
+      categoryPerformance: []
+    };
+  }
+
+  async getProductReviews(productId: string, sellerId: string, page: number = 1, limit: number = 10) {
+    return {
+      reviews: [],
+      pagination: {
+        page,
+        limit,
+        total: 0,
+        pages: 0
+      },
+      summary: {
+        average: 0,
+        count: 0,
+        distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+      }
+    };
+  }
+
+  async updateProductInventory(productId: string, sellerId: string, quantity: number) {
+    const product = await this.repository.findById(productId, sellerId);
+    
+    await this.repository.update(productId, sellerId, {
+      inStockQuantity: quantity
+    });
+
+    return { message: 'Inventory updated successfully' };
+  }
+
   async bulkUpdateProducts(sellerId: string, data: BulkUpdateData) {
     return await this.repository.bulkUpdate(sellerId, data);
   }
 
+  async bulkDeleteProducts(sellerId: string, productIds: string[]) {
+    return await this.repository.bulkDelete(sellerId, productIds);
+  }
+
   async exportProducts(sellerId: string, format: 'csv' | 'json' = 'csv', search?: string, status?: string) {
-    try {
-      const products = await this.repository.getProductsForExport(sellerId, search, status);
+    const products = await this.repository.getProductsForExport(sellerId, search, status);
 
-      if (format === 'csv') {
-        // Convert to CSV
-        const headers = [
-          'Name',
-          'Description',
-          'Original Price',
-          'Final Price',
-          'Stock Quantity',
-          'Status',
-          'Published',
-          'Created At',
-          'Updated At'
-        ];
+    if (format === 'csv') {
+      // Convert to CSV
+      const headers = [
+        'Name',
+        'Description',
+        'Original Price',
+        'Final Price',
+        'Stock Quantity',
+        'Status',
+        'Published',
+        'Created At',
+        'Updated At'
+      ];
 
-        const csvRows = [
-          headers.join(','),
-          ...products.map(product => [
-            `"${product.name || ''}"`,
-            `"${product.description || ''}"`,
-            product.originalPrice || 0,
-            product.finalPrice || 0,
-            product.inStockQuantity || 0,
-            product.status || '',
-            product.isPublished ? 'Yes' : 'No',
-            new Date(product.createdAt).toLocaleDateString(),
-            new Date(product.updatedAt).toLocaleDateString()
-          ].join(','))
-        ];
+      const csvRows = [
+        headers.join(','),
+        ...products.map(product => [
+          `"${product.name || ''}"`,
+          `"${product.description || ''}"`,
+          product.originalPrice || 0,
+          product.finalPrice || 0,
+          product.inStockQuantity || 0,
+          product.status || '',
+          product.isPublished ? 'Yes' : 'No',
+          new Date(product.createdAt).toLocaleDateString(),
+          new Date(product.updatedAt).toLocaleDateString()
+        ].join(','))
+      ];
 
-        return {
-          content: csvRows.join('\n'),
-          filename: `products-export-${new Date().toISOString().split('T')[0]}.csv`,
-          contentType: 'text/csv'
-        };
-      } else {
-        // Return JSON
-        return {
-          content: JSON.stringify(products, null, 2),
-          filename: `products-export-${new Date().toISOString().split('T')[0]}.json`,
-          contentType: 'application/json'
-        };
-      }
-    } catch (error) {
-      throw new ProductExportError(`Failed to export products: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return {
+        content: csvRows.join('\n'),
+        filename: `products-export-${new Date().toISOString().split('T')[0]}.csv`,
+        contentType: 'text/csv'
+      };
+    } else {
+      // Return JSON
+      return {
+        content: JSON.stringify(products, null, 2),
+        filename: `products-export-${new Date().toISOString().split('T')[0]}.json`,
+        contentType: 'application/json'
+      };
     }
   }
 

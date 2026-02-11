@@ -1,7 +1,7 @@
 import { IAdminProductsRepository, AdminProduct, ProductStats, BulkOperationResult } from "./IAdminProductsRepository";
 import { AdminProductsQueryRequest, ProductStatus } from "./AdminProductsSchemas";
 import { PaginationResult } from "../../shared/types";
-import { RepositoryError } from "../../shared/InfrastructureError";
+import { getStartDateFromPeriod } from "../../shared/dateUtils";
 import { mapDocumentToPlainObject, mapDocumentsToPlainObjects } from "../../shared/mapperUtils";
 import Product from "@/models/Product";
 import Seller from "@/models/Seller";
@@ -10,7 +10,6 @@ import SubCategory from "@/models/SubCategory";
 
 export class AdminProductsRepository implements IAdminProductsRepository {
   async findById(id: string): Promise<AdminProduct | null> {
-    try {
       const product = await Product.findById(id)
         .populate("sellerId", "businessName email")
         .populate("categoryId", "name")
@@ -18,14 +17,24 @@ export class AdminProductsRepository implements IAdminProductsRepository {
         .lean();
 
       return product ? this.mapToAdminProduct(product) : null;
-    } catch (error) {
-      throw new RepositoryError("Failed to find product by ID", "findById", error as Error);
-    }
   }
 
   async findMany(query: AdminProductsQueryRequest): Promise<PaginationResult<AdminProduct>> {
-    try {
-      const { page, limit, search, status, sellerId, categoryId, subCategoryId, isPublished, sortBy, sortOrder, minPrice, maxPrice } = query;
+      const { 
+        page = 1, 
+        limit = 10, 
+        search, 
+        status, 
+        period,
+        sellerId, 
+        categoryId, 
+        subCategoryId, 
+        isPublished, 
+        sortBy = "createdAt", 
+        sortOrder = "desc", 
+        minPrice, 
+        maxPrice 
+      } = query;
       
       // Build filter
       const filter: any = {};
@@ -49,6 +58,12 @@ export class AdminProductsRepository implements IAdminProductsRepository {
         }
       }
       
+      // Period filter
+      if (period) {
+        const startDate = getStartDateFromPeriod(period);
+        filter.createdAt = { $gte: startDate };
+      }
+      
       if (sellerId) filter.sellerId = sellerId;
       if (categoryId) filter.categoryId = categoryId;
       if (subCategoryId) filter.subCategoryId = subCategoryId;
@@ -69,7 +84,6 @@ export class AdminProductsRepository implements IAdminProductsRepository {
         Product.find(filter)
           .populate("sellerId", "businessName email")
           .populate("categoryId", "name")
-          .populate("subCategoryId", "name")
           .sort(sort)
           .skip((page - 1) * limit)
           .limit(limit)
@@ -90,32 +104,11 @@ export class AdminProductsRepository implements IAdminProductsRepository {
           hasPrev: page > 1,
         },
       };
-    } catch (error) {
-      throw new RepositoryError("Failed to find products", "findMany", error as Error);
-    }
   }
 
   async getStats(period: string): Promise<ProductStats> {
-    try {
-      const now = new Date();
-      let startDate: Date;
-
-      switch (period) {
-        case "7d":
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case "30d":
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        case "90d":
-          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-          break;
-        case "1y":
-          startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-          break;
-        default:
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      }
+      const startDate = getStartDateFromPeriod(period);
+      const periodFilter = { createdAt: { $gte: startDate } };
 
       const [
         total,
@@ -123,30 +116,14 @@ export class AdminProductsRepository implements IAdminProductsRepository {
         approved,
         rejected,
         published,
-        unpublished,
-        byCategory,
-        bySeller
+        unpublished
       ] = await Promise.all([
-        Product.countDocuments(),
-        Product.countDocuments({ $or: [{ status: "PENDING" }, { status: { $exists: false } }, { status: null }] }),
-        Product.countDocuments({ status: "APPROVED" }),
-        Product.countDocuments({ status: "REJECTED" }),
-        Product.countDocuments({ isPublished: true }),
-        Product.countDocuments({ isPublished: false }),
-        Product.aggregate([
-          { $lookup: { from: "categories", localField: "categoryId", foreignField: "_id", as: "category" } },
-          { $unwind: "$category" },
-          { $group: { _id: "$categoryId", categoryName: { $first: "$category.name" }, count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-          { $limit: 10 }
-        ]),
-        Product.aggregate([
-          { $lookup: { from: "sellers", localField: "sellerId", foreignField: "_id", as: "seller" } },
-          { $unwind: "$seller" },
-          { $group: { _id: "$sellerId", sellerName: { $first: "$seller.businessName" }, count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-          { $limit: 10 }
-        ])
+        Product.countDocuments(periodFilter),
+        Product.countDocuments({ ...periodFilter, $or: [{ status: "PENDING" }, { status: { $exists: false } }, { status: null }] }),
+        Product.countDocuments({ ...periodFilter, status: "APPROVED" }),
+        Product.countDocuments({ ...periodFilter, status: "REJECTED" }),
+        Product.countDocuments({ ...periodFilter, isPublished: true }),
+        Product.countDocuments({ ...periodFilter, isPublished: false })
       ]);
 
       return {
@@ -156,25 +133,13 @@ export class AdminProductsRepository implements IAdminProductsRepository {
         rejected,
         published,
         unpublished,
-        byCategory: byCategory.map((item: any) => ({
-          categoryId: item._id.toString(),
-          categoryName: item.categoryName,
-          count: item.count,
-        })),
-        bySeller: bySeller.map((item: any) => ({
-          sellerId: item._id.toString(),
-          sellerName: item.sellerName,
-          count: item.count,
-        })),
-        recentActivity: [], // Simplified for now
+        byCategory: [],
+        bySeller: [],
+        recentActivity: [],
       };
-    } catch (error) {
-      throw new RepositoryError("Failed to get product stats", "getStats", error as Error);
-    }
   }
 
   async updateStatus(productId: string, status: ProductStatus, reason?: string): Promise<AdminProduct> {
-    try {
       const updateData: any = { status, updatedAt: new Date() };
       if (reason) updateData.rejectionReason = reason;
 
@@ -192,13 +157,9 @@ export class AdminProductsRepository implements IAdminProductsRepository {
       }
 
       return this.mapToAdminProduct(product.toObject());
-    } catch (error) {
-      throw new RepositoryError("Failed to update product status", "updateStatus", error as Error);
-    }
   }
 
   async updatePublishStatus(productId: string, isPublished: boolean): Promise<AdminProduct> {
-    try {
       const product = await Product.findByIdAndUpdate(
         productId,
         { isPublished, updatedAt: new Date() },
@@ -213,24 +174,16 @@ export class AdminProductsRepository implements IAdminProductsRepository {
       }
 
       return this.mapToAdminProduct(product.toObject());
-    } catch (error) {
-      throw new RepositoryError("Failed to update product publish status", "updatePublishStatus", error as Error);
-    }
   }
 
   async delete(productId: string): Promise<void> {
-    try {
       const result = await Product.findByIdAndDelete(productId);
       if (!result) {
         throw new Error("Product not found");
       }
-    } catch (error) {
-      throw new RepositoryError("Failed to delete product", "delete", error as Error);
-    }
   }
 
   async bulkUpdateStatus(productIds: string[], status: ProductStatus, reason?: string): Promise<BulkOperationResult> {
-    try {
       const updateData: any = { status, updatedAt: new Date() };
       if (reason) updateData.rejectionReason = reason;
 
@@ -246,13 +199,9 @@ export class AdminProductsRepository implements IAdminProductsRepository {
         successCount: result.modifiedCount,
         failedCount: productIds.length - result.modifiedCount,
       };
-    } catch (error) {
-      throw new RepositoryError("Failed to bulk update product status", "bulkUpdateStatus", error as Error);
-    }
   }
 
   async bulkUpdatePublishStatus(productIds: string[], isPublished: boolean): Promise<BulkOperationResult> {
-    try {
       const result = await Product.updateMany(
         { _id: { $in: productIds } },
         { isPublished, updatedAt: new Date() }
@@ -265,13 +214,9 @@ export class AdminProductsRepository implements IAdminProductsRepository {
         successCount: result.modifiedCount,
         failedCount: productIds.length - result.modifiedCount,
       };
-    } catch (error) {
-      throw new RepositoryError("Failed to bulk update publish status", "bulkUpdatePublishStatus", error as Error);
-    }
   }
 
   async bulkDelete(productIds: string[]): Promise<BulkOperationResult> {
-    try {
       const result = await Product.deleteMany({ _id: { $in: productIds } });
 
       return {
@@ -281,9 +226,6 @@ export class AdminProductsRepository implements IAdminProductsRepository {
         successCount: result.deletedCount,
         failedCount: productIds.length - result.deletedCount,
       };
-    } catch (error) {
-      throw new RepositoryError("Failed to bulk delete products", "bulkDelete", error as Error);
-    }
   }
 
   async getProductTrends(startDate: Date, endDate: Date): Promise<Array<{
@@ -293,21 +235,17 @@ export class AdminProductsRepository implements IAdminProductsRepository {
     rejected: number;
     pending: number;
   }>> {
-    try {
       // Simplified implementation
       return [];
-    } catch (error) {
-      throw new RepositoryError("Failed to get product trends", "getProductTrends", error as Error);
-    }
   }
 
   private mapToAdminProduct(product: any): AdminProduct {
     return {
       id: product._id?.toString() || product.id,
       name: product.name,
-      description: product.description,
-      price: product.price,
-      images: product.images || [],
+      description: product.description || "",
+      price: product.finalPrice || product.originalPrice || 0,
+      images: product.galleryImages?.map((img: any) => img.url) || [],
       status: product.status || "PENDING",
       isPublished: product.isPublished || false,
       sellerId: {
@@ -323,7 +261,7 @@ export class AdminProductsRepository implements IAdminProductsRepository {
         id: product.subCategoryId._id?.toString() || product.subCategoryId.id || product.subCategoryId,
         name: product.subCategoryId.name || "",
       } : undefined,
-      stock: product.stock || 0,
+      stock: product.inStockQuantity || 0,
       sku: product.sku || "",
       rejectionReason: product.rejectionReason,
       createdAt: product.createdAt,

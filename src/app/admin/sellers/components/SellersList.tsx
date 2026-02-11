@@ -11,13 +11,13 @@ import {
   Star, 
   User 
 } from "lucide-react";
-import { AdminSeller } from "@/lib/domain/admin/sellers/IAdminSellersRepository";
+import type { AdminSeller, SellerStatus } from "@/types/admin/sellers";
 import { formatCurrency } from "@/utils/currency";
 import { useSellersUIStore } from "@/stores/admin/sellersStore";
 
 interface SellersListProps {
   sellers: AdminSeller[];
-  onStatusChange: (sellerId: string, status: "active" | "pending" | "suspended" | "inactive") => void;
+  onStatusChange: (sellerId: string, status: SellerStatus, reason?: string) => void;
   onVerificationChange: (sellerId: string, verified: boolean) => void;
   isUpdating?: boolean;
 }
@@ -30,19 +30,6 @@ export default function SellersList({
 }: SellersListProps) {
   const expandedSellerId = useSellersUIStore(s => s.expandedSellerId);
   const setExpandedSellerId = useSellersUIStore(s => s.setExpandedSellerId);
-  const search = useSellersUIStore(s => s.search);
-  const status = useSellersUIStore(s => s.status);
-
-  const filteredSellers = sellers.filter((seller) => {
-    const matchesSearch = !search || 
-      seller.businessName.toLowerCase().includes(search.toLowerCase()) ||
-      seller.email.toLowerCase().includes(search.toLowerCase()) ||
-      seller.contactPerson?.toLowerCase().includes(search.toLowerCase());
-    
-    const matchesStatus = status === 'all' || seller.status === status;
-    
-    return matchesSearch && matchesStatus;
-  });
 
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return 'N/A';
@@ -59,19 +46,7 @@ export default function SellersList({
 
   useEffect(() => {
     setExpandedSellerId(null);
-  }, [search, status, setExpandedSellerId]);
-
-  if (filteredSellers.length === 0) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <Store className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <h3 className="text-sm font-medium text-gray-900">No sellers found</h3>
-        <p className="text-sm text-gray-500 mt-1">
-          {search ? 'Try a different search term' : 'No sellers registered yet'}
-        </p>
-      </div>
-    );
-  }
+  }, [sellers, setExpandedSellerId]);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -102,7 +77,7 @@ export default function SellersList({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredSellers.map((seller) => (
+            {sellers.map((seller) => (
               <React.Fragment key={seller.id}>
                 <tr className="hover:bg-gray-50 transition-colors group">
                   <td className="px-4 py-3">

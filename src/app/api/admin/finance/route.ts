@@ -29,6 +29,22 @@ export const GET = withAdminAuth(
           return ApiResponseBuilder.success(overview);
         }
 
+        if (queryParams.type === "data") {
+          const validatedQuery = FinanceQuerySchema.parse(queryParams);
+          const data = await adminFinanceService.getFinanceData(validatedQuery);
+          return ApiResponseBuilder.success(data);
+        }
+
+        if (queryParams.type === "export") {
+          const validatedQuery = FinanceQuerySchema.parse(queryParams);
+          const overview = await adminFinanceService.getFinanceOverview(validatedQuery);
+          return ApiResponseBuilder.success({
+            data: overview,
+            format: queryParams.format || 'json',
+            exportedAt: new Date().toISOString(),
+          });
+        }
+
         if (queryParams.type === "revenue") {
           const validatedQuery = FinanceQuerySchema.parse(queryParams);
           const revenueData = await adminFinanceService.getRevenueData(validatedQuery);
@@ -57,10 +73,10 @@ export const GET = withAdminAuth(
           return ApiResponseBuilder.success(categoryRevenue);
         }
 
-        // Default: return overview
+        // Default: return full finance data
         const validatedQuery = FinanceQuerySchema.parse(queryParams);
-        const overview = await adminFinanceService.getFinanceOverview(validatedQuery);
-        return ApiResponseBuilder.success(overview);
+        const data = await adminFinanceService.getFinanceData(validatedQuery);
+        return ApiResponseBuilder.success(data);
       },
     ),
   ),

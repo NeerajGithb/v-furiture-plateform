@@ -1,9 +1,5 @@
 import { MapPin } from 'lucide-react';
-import { Order } from '../types';
-
-interface ShippingAddressProps {
-  shippingAddress: Order['shippingAddress'];
-}
+import { ShippingAddressProps } from '@/types/seller/orders';
 
 export function ShippingAddress({ shippingAddress }: ShippingAddressProps) {
   return (

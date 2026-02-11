@@ -9,7 +9,7 @@ import {
   Users,
   Settings
 } from 'lucide-react';
-import { NotificationStats } from '@/types/sellerNotifications';
+import { NotificationStats } from '@/types/seller/notifications';
 
 interface NotificationsStatsProps {
   stats?: NotificationStats;

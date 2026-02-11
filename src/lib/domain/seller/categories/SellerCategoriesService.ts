@@ -2,7 +2,7 @@ import { sellerCategoriesRepository } from "./SellerCategoriesRepository";
 import { SellerCategoriesQueryRequest } from "./SellerCategoriesSchemas";
 
 export class SellerCategoriesService {
-  async getCategories(query: SellerCategoriesQueryRequest = {}) {
+  async getCategories(query: Partial<SellerCategoriesQueryRequest> = {}) {
     const categories = await sellerCategoriesRepository.getAllCategories();
 
     // Apply search filter if provided

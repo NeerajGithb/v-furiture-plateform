@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PeriodSchema } from "../../shared/commonSchemas";
 
 export const SellerReviewsQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
@@ -7,7 +8,7 @@ export const SellerReviewsQuerySchema = z.object({
   rating: z.string().optional(),
   productId: z.string().optional(),
   search: z.string().optional(),
-  period: z.string().optional().default("all"),
+  period: PeriodSchema.default("all"),
 });
 
 export const RespondToReviewSchema = z.object({

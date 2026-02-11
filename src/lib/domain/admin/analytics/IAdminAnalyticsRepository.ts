@@ -78,6 +78,22 @@ export interface SalesAnalytics {
   }>;
 }
 
+export interface AdminAnalyticsData {
+  overview: AnalyticsOverview;
+  topPerformers: TopPerformers;
+  userAnalytics: UserAnalytics;
+  salesAnalytics: SalesAnalytics;
+  realTimeStats: {
+    activeUsers: number;
+    onlineOrders: number;
+    recentActivity: Array<{
+      type: string;
+      description: string;
+      timestamp: Date;
+    }>;
+  };
+}
+
 export interface IAdminAnalyticsRepository {
   // Overview data
   getAnalyticsOverview(query: AdminAnalyticsQueryRequest): Promise<AnalyticsOverview>;

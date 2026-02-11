@@ -7,6 +7,7 @@ import {
   SellerProductsQuerySchema, 
   CreateProductSchema,
   BulkProductUpdateSchema,
+  BulkProductDeleteSchema,
   ProductExportSchema
 } from '@/lib/domain/seller/products/SellerProductsSchemas';
 import { ApiResponseBuilder } from '@/lib/utils/apiResponse';
@@ -21,35 +22,35 @@ export const GET = withSellerAuth(
         const validatedQuery = SellerProductsQuerySchema.parse(queryParams);
         const { action, ...filters } = validatedQuery;
 
-        // Handle different actions
-        switch (action) {
-          case 'stats':
-            const stats = await sellerProductsService.getProductStats(seller.id);
-            return ApiResponseBuilder.success({ stats });
-
-          case 'export':
-            const exportParams = ProductExportSchema.parse(queryParams);
-            const exportResult = await sellerProductsService.exportProducts(
-              seller.id,
-              exportParams.format,
-              exportParams.search,
-              exportParams.status === 'all' ? undefined : exportParams.status
-            );
-
-            return ApiResponseBuilder.success(exportResult, {
-              contentType: exportResult.contentType,
-              filename: exportResult.filename
-            });
-
-          default:
-            // Default list action
-            const result = await sellerProductsService.getProducts({
-              sellerId: seller.id,
-              ...filters
-            });
-
-            return ApiResponseBuilder.success(result, { message: 'Products retrieved successfully' });
+        if (queryParams.stats === "true") {
+          const stats = await sellerProductsService.getProductStats(seller.id);
+          return ApiResponseBuilder.success(stats);
         }
+
+        if (action === 'export') {
+          const exportParams = ProductExportSchema.parse(queryParams);
+          const exportResult = await sellerProductsService.exportProducts(
+            seller.id,
+            exportParams.format,
+            exportParams.search,
+            exportParams.status
+          );
+
+          return ApiResponseBuilder.success(exportResult, {
+            contentType: exportResult.contentType,
+            filename: exportResult.filename
+          });
+        }
+
+        const result = await sellerProductsService.getProducts({
+          sellerId: seller.id,
+          ...filters
+        });
+
+        return ApiResponseBuilder.paginated(
+          result.products,
+          result.pagination
+        );
       },
     ),
   ),
@@ -61,14 +62,18 @@ export const POST = withSellerAuth(
       async (request: NextRequest, seller: AuthenticatedSeller) => {
         const body = await request.json();
 
-        // Check if this is a bulk update request
         if (body.action === 'bulk-update') {
           const validatedData = BulkProductUpdateSchema.parse(body);
           const result = await sellerProductsService.bulkUpdateProducts(seller.id, validatedData);
           return ApiResponseBuilder.success(result);
         }
 
-        // Regular product creation
+        if (body.action === 'bulk-delete') {
+          const validatedData = BulkProductDeleteSchema.parse(body);
+          const result = await sellerProductsService.bulkDeleteProducts(seller.id, validatedData.productIds);
+          return ApiResponseBuilder.success(result);
+        }
+
         const { _confirmed, ...cleanBody } = body;
         const validatedData = CreateProductSchema.parse(cleanBody);
 

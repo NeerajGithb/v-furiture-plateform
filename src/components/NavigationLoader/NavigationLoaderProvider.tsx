@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { navigationLoader } from './navigationLoader';
 
-export const NavigationLoaderProvider = ({ children }: { children: React.ReactNode }) => {
+function NavigationLoaderContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const isFirstRender = useRef(true);
@@ -19,4 +19,12 @@ export const NavigationLoaderProvider = ({ children }: { children: React.ReactNo
     }, [pathname, searchParams]);
 
     return <>{children}</>;
+}
+
+export const NavigationLoaderProvider = ({ children }: { children: React.ReactNode }) => {
+    return (
+        <Suspense fallback={<>{children}</>}>
+            <NavigationLoaderContent>{children}</NavigationLoaderContent>
+        </Suspense>
+    );
 };

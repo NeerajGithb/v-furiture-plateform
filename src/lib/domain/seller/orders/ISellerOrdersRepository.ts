@@ -6,6 +6,33 @@ import {
   OrderCancelRequest
 } from "./SellerOrdersSchemas";
 
+export interface SellerOrderItem {
+  id: string;
+  productId: {
+    id: string;
+    name: string;
+    mainImage?: any;
+    slug?: string;
+  };
+  name: string;
+  price: number;
+  quantity: number;
+  productImage: string;
+  selectedVariant?: any;
+  sku?: string;
+}
+
+export interface SellerOrderAddress {
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
 export interface SellerOrder {
   id: string;
   orderNumber: string;
@@ -17,21 +44,7 @@ export interface SellerOrder {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  items: Array<{
-    id: string;
-    productId: {
-      id: string;
-      name: string;
-      mainImage?: any;
-      slug?: string;
-    };
-    name: string;
-    price: number;
-    quantity: number;
-    productImage: string;
-    selectedVariant?: any;
-    sku?: string;
-  }>;
+  items: SellerOrderItem[];
   subtotal: number;
   shippingCost: number;
   tax: number;
@@ -40,16 +53,7 @@ export interface SellerOrder {
   orderStatus: string;
   paymentStatus: string;
   paymentMethod: string;
-  shippingAddress: {
-    fullName: string;
-    phone: string;
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  };
+  shippingAddress: SellerOrderAddress;
   trackingNumber?: string;
   estimatedDelivery?: Date;
   expectedDeliveryDate?: Date;

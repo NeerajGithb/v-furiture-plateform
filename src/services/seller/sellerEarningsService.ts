@@ -9,7 +9,7 @@ import {
   PayoutFilters,
   EarningsExportData,
   BulkTransactionAction
-} from "@/types/sellerEarnings";
+} from "@/types/seller/earnings";
 
 class SellerEarningsService extends BasePrivateService {
   constructor() {
@@ -17,8 +17,8 @@ class SellerEarningsService extends BasePrivateService {
   }
 
   // Get earnings data with summary
-  async getEarningsData(params: EarningsQuery = {}): Promise<EarningsData> {
-    const response = await this.get<EarningsData>("/seller/earnings", params);
+  async getEarningsData(params: any = {}): Promise<any> {
+    const response = await this.get<any>("/seller/earnings", params);
 
     if (response.success) {
       return response.data!;
@@ -29,7 +29,6 @@ class SellerEarningsService extends BasePrivateService {
     }
   }
 
-  // Get earnings summary only
   async getEarningsSummary(period?: string): Promise<any> {
     const params = period ? { action: "summary", period } : { action: "summary" };
     const response = await this.get<{ summary: any }>("/seller/earnings", params);
@@ -43,39 +42,30 @@ class SellerEarningsService extends BasePrivateService {
     }
   }
 
-  // Get transactions with pagination and filters
-  async getTransactions(params: EarningsFilters = {}): Promise<EarningsTransactionsResponse> {
-    const response = await this.get<EarningsTransactionsResponse>("/seller/earnings", {
+  async getTransactions(params: any = {}): Promise<any> {
+    const result = await this.getPaginated<any>("/seller/earnings", {
       action: "transactions",
       ...params
     });
 
-    if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch transactions.",
-      );
-    }
+    return {
+      transactions: result.data || [],
+      pagination: result.pagination
+    };
   }
 
-  // Get payouts with pagination and filters
-  async getPayouts(params: PayoutFilters = {}): Promise<EarningsPayoutsResponse> {
-    const response = await this.get<EarningsPayoutsResponse>("/seller/earnings", {
+  async getPayouts(params: any = {}): Promise<any> {
+    const result = await this.getPaginated<any>("/seller/earnings", {
       action: "payouts",
       ...params
     });
 
-    if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch payouts.",
-      );
-    }
+    return {
+      payouts: result.data || [],
+      pagination: result.pagination
+    };
   }
 
-  // Get analytics data
   async getAnalytics(period?: string): Promise<any> {
     const params = period ? { action: "analytics", period } : { action: "analytics" };
     const response = await this.get<{ analytics: any }>("/seller/earnings", params);
@@ -108,7 +98,6 @@ class SellerEarningsService extends BasePrivateService {
   // Cancel payout
   async cancelPayout(payoutId: string): Promise<any> {
     const response = await this.patch(`/seller/earnings`, {
-      action: "cancel_payout",
       payoutId
     });
 
@@ -140,8 +129,8 @@ class SellerEarningsService extends BasePrivateService {
   // Bulk transaction actions
   async bulkTransactionAction(data: BulkTransactionAction): Promise<any> {
     const response = await this.post("/seller/earnings", {
-      action: "bulk_transaction",
-      ...data
+      ...data,
+      action: "bulk_transaction"
     });
 
     if (response.success) {

@@ -1,6 +1,7 @@
 import { sellerOrdersRepository } from "./SellerOrdersRepository";
 import { 
-  SellerOrdersQueryRequest, 
+  SellerOrdersQueryRequest,
+  OrderStatsQueryRequest,
   OrderStatusUpdateRequest, 
   BulkOrderUpdateRequest,
   OrderExportRequest,
@@ -14,46 +15,15 @@ export class SellerOrdersService {
   private readonly validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'];
 
   async getOrdersData(sellerId: string, query: SellerOrdersQueryRequest) {
-    const { page = 1, limit = 20, action } = query;
-
-    // Handle specific actions
-    if (action === 'stats') {
-      const stats = await sellerOrdersRepository.getOrdersStats(sellerId, {
-        status: query.status,
-        period: query.period,
-      });
-      return { stats };
-    }
-
-    // Get orders list with stats
-    const [ordersResult, stats] = await Promise.all([
-      sellerOrdersRepository.getOrdersList(sellerId, {
-        page,
-        limit,
-        search: query.search,
-        status: query.status,
-        period: query.period,
-        sortBy: query.sortBy,
-        sortOrder: query.sortOrder,
-      }),
-      sellerOrdersRepository.getOrdersStats(sellerId, {
-        status: query.status,
-        period: query.period,
-      })
-    ]);
-
-    return {
-      orders: ordersResult.orders,
-      stats,
-      pagination: {
-        page,
-        limit,
-        total: ordersResult.total,
-        totalPages: Math.ceil(ordersResult.total / limit),
-        hasNext: page < Math.ceil(ordersResult.total / limit),
-        hasPrev: page > 1,
-      },
-    };
+    return await sellerOrdersRepository.getOrdersList(sellerId, {
+      page: query.page || 1,
+      limit: query.limit || 20,
+      search: query.search,
+      status: query.status,
+      period: query.period,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+    });
   }
 
   async getOrderById(sellerId: string, orderId: string) {
@@ -130,11 +100,11 @@ export class SellerOrdersService {
     };
   }
 
-  async getOrdersStats(sellerId: string, filters: {
-    status?: string;
-    period?: string;
-  } = {}) {
-    return await sellerOrdersRepository.getOrdersStats(sellerId, filters);
+  async getOrdersStats(sellerId: string, query: OrderStatsQueryRequest) {
+    return await sellerOrdersRepository.getOrdersStats(sellerId, {
+      status: query.status,
+      period: query.period,
+    });
   }
 
   async updateOrderTracking(sellerId: string, orderId: string, trackingData: OrderTrackingUpdateRequest) {

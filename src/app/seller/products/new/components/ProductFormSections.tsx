@@ -61,7 +61,6 @@ export function ProductFormSections({
 
   return (
     <div className="space-y-8">
-      {/* Basic Information */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -100,8 +99,8 @@ export function ProductFormSections({
               onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value, subcategoryId: '' }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
             >
-              <option value="">Select Category</option>
-              {categories.map((category) => (
+              <option key="empty-category" value="">Select Category</option>
+              {categories.filter(cat => cat._id).map((category) => (
                 <option key={category._id} value={category._id}>
                   {category.name}
                 </option>
@@ -119,8 +118,8 @@ export function ProductFormSections({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               disabled={!formData.categoryId}
             >
-              <option value="">Select Subcategory</option>
-              {filteredSubcategories.map((subcategory) => (
+              <option key="empty-subcategory" value="">Select Subcategory</option>
+              {filteredSubcategories.filter(sub => sub._id).map((subcategory) => (
                 <option key={subcategory._id} value={subcategory._id}>
                   {subcategory.name}
                 </option>
@@ -130,11 +129,9 @@ export function ProductFormSections({
         </div>
       </div>
 
-      {/* Images */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Images</h2>
         
-        {/* Main Image */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Main Image *
@@ -180,7 +177,6 @@ export function ProductFormSections({
           </div>
         </div>
 
-        {/* Gallery Images */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Gallery Images * (At least 2 images)
@@ -227,7 +223,6 @@ export function ProductFormSections({
         </div>
       </div>
 
-      {/* Pricing & Inventory */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Pricing & Inventory</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -277,7 +272,6 @@ export function ProductFormSections({
         </div>
       </div>
 
-      {/* Publishing */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Publishing</h2>
         <div className="flex items-center">

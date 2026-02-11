@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PeriodSchema } from "../../shared/commonSchemas";
 
 export const CouponTypeSchema = z.enum(["percentage", "fixed"]);
 
@@ -8,6 +9,7 @@ export const AdminCouponsQuerySchema = z.object({
   search: z.string().optional(),
   type: CouponTypeSchema.optional(),
   isActive: z.coerce.boolean().optional(),
+  period: PeriodSchema.optional(),
   sortBy: z.enum(["createdAt", "code", "discount", "expiryDate"]).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });

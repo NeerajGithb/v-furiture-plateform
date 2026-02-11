@@ -1,5 +1,5 @@
 import { BasePrivateService } from "../baseService";
-import { SellerDashboardData } from "@/types/sellerDashboard";
+import { SellerDashboardData } from "@/types/seller/dashboard";
 
 interface DashboardQuery {
   period?: string;

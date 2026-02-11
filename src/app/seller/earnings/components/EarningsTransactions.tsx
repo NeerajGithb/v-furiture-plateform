@@ -17,7 +17,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
-import { EarningsTransactionsProps } from '@/types/sellerEarnings';
+import { EarningsTransactionsProps } from '@/types/seller/earnings';
 
 export default function EarningsTransactions({
   transactions,

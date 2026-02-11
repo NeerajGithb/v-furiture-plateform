@@ -1,13 +1,14 @@
 import { z } from "zod";
+import { PeriodSchema, SortOrderSchema } from "../../shared/commonSchemas";
 
 export const SellerProductsQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   search: z.string().optional(),
   status: z.enum(['published', 'draft', 'outOfStock', 'lowStock', 'pending', 'approved', 'rejected']).optional(),
-  period: z.enum(['30min', '1hour', '1day', '7days', '30days', '1year', 'all']).default('all'),
+  period: PeriodSchema.or(z.enum(['all'])).default('all'),
   sortBy: z.enum(['createdAt', 'updatedAt', 'name', 'finalPrice', 'inStockQuantity']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  sortOrder: SortOrderSchema.default('desc'),
   action: z.enum(['list', 'stats', 'export', 'bulk-update']).optional(),
 });
 
@@ -53,6 +54,7 @@ export const UpdateProductSchema = z.object({
 });
 
 export const BulkProductUpdateSchema = z.object({
+  action: z.literal('bulk-update').optional(),
   productIds: z.array(z.string()).min(1, "At least one product ID is required"),
   updates: z.object({
     isPublished: z.boolean().optional(),
@@ -60,6 +62,11 @@ export const BulkProductUpdateSchema = z.object({
     inStockQuantity: z.number().min(0).optional(),
     finalPrice: z.number().min(0).optional(),
   }),
+});
+
+export const BulkProductDeleteSchema = z.object({
+  action: z.literal('bulk-delete').optional(),
+  productIds: z.array(z.string()).min(1, "At least one product ID is required"),
 });
 
 export const ProductExportSchema = z.object({
@@ -72,4 +79,5 @@ export type SellerProductsQueryRequest = z.infer<typeof SellerProductsQuerySchem
 export type CreateProductRequest = z.infer<typeof CreateProductSchema>;
 export type UpdateProductRequest = z.infer<typeof UpdateProductSchema>;
 export type BulkProductUpdateRequest = z.infer<typeof BulkProductUpdateSchema>;
+export type BulkProductDeleteRequest = z.infer<typeof BulkProductDeleteSchema>;
 export type ProductExportRequest = z.infer<typeof ProductExportSchema>;

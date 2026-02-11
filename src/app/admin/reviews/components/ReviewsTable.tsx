@@ -3,7 +3,7 @@ import {
   Star, User, Package, Calendar, MessageSquare, CheckCircle, XCircle, Clock,
   AlertTriangle, ChevronDown, ChevronUp, Eye, Trash2
 } from 'lucide-react';
-import { AdminReview } from '@/types/review';
+import { AdminReview } from '@/types/admin/reviews';
 
 interface ReviewsTableProps {
   reviews: AdminReview[];
@@ -73,18 +73,6 @@ export default function ReviewsTable({
     setExpandedReview(expandedReview === reviewId ? null : reviewId);
   };
 
-  if (reviews.length === 0) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="p-12 text-center">
-          <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-900 font-medium">No reviews found</p>
-          <p className="text-gray-500 text-sm mt-1">Try adjusting your search or filters</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       {/* Table Header */}
@@ -109,15 +97,15 @@ export default function ReviewsTable({
       </div>
 
       <div className="divide-y divide-gray-200">
-        {reviews.map((review) => (
-          <div key={review._id} className="hover:bg-gray-50 transition-colors group">
+        {reviews?.map((review) => (
+          <div key={review.id} className="hover:bg-gray-50 transition-colors group">
             {/* Review Header */}
             <div className="p-4 sm:p-6">
               <div className="flex items-start gap-4">
                 <input
                   type="checkbox"
-                  checked={selectedReviews.includes(review._id)}
-                  onChange={() => onSelectReview(review._id)}
+                  checked={selectedReviews.includes(review.id)}
+                  onChange={() => onSelectReview(review.id)}
                   className="mt-1 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                 />
 
@@ -134,11 +122,11 @@ export default function ReviewsTable({
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <User className="w-3.5 h-3.5" />
-                          {review.userId?.name || 'Anonymous'}
+                          {review.user?.name || 'Anonymous'}
                         </span>
                         <span className="flex items-center gap-1">
                           <Package className="w-3.5 h-3.5" />
-                          {review.productId?.name || 'Product'}
+                          {review.product?.name || 'Product'}
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5" />
@@ -157,14 +145,14 @@ export default function ReviewsTable({
                   {review.status === 'pending' && (
                     <>
                       <button
-                        onClick={() => onUpdateStatus(review._id, 'approved')}
+                        onClick={() => onUpdateStatus(review.id, 'approved')}
                         className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
                         title="Approve"
                       >
                         <CheckCircle className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => onUpdateStatus(review._id, 'rejected')}
+                        onClick={() => onUpdateStatus(review.id, 'rejected')}
                         className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                         title="Reject"
                       >
@@ -174,10 +162,10 @@ export default function ReviewsTable({
                   )}
 
                   <button
-                    onClick={() => handleToggleExpand(review._id)}
+                    onClick={() => handleToggleExpand(review.id)}
                     className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
                   >
-                    {expandedReview === review._id ? (
+                    {expandedReview === review.id ? (
                       <ChevronUp className="w-4 h-4" />
                     ) : (
                       <ChevronDown className="w-4 h-4" />
@@ -188,7 +176,7 @@ export default function ReviewsTable({
             </div>
 
             {/* Expanded Review Details */}
-            {expandedReview === review._id && (
+            {expandedReview === review.id && (
               <div className="px-6 pb-6 bg-gray-50 border-t border-gray-200">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
                   {/* Review Content */}
@@ -237,8 +225,8 @@ export default function ReviewsTable({
                         <div className="flex items-start gap-3">
                           <User className="w-4 h-4 text-gray-400 mt-0.5" />
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{review.userId?.name || 'Anonymous'}</p>
-                            <p className="text-xs text-gray-500">{review.userId?.email}</p>
+                            <p className="text-sm font-medium text-gray-900">{review.user?.name || 'Anonymous'}</p>
+                            <p className="text-xs text-gray-500">{review.user?.email}</p>
                             {review.verifiedPurchase && (
                               <p className="text-xs text-green-600 mt-0.5 flex items-center gap-1">
                                 <CheckCircle className="w-3 h-3" /> Verified Purchase
@@ -249,9 +237,9 @@ export default function ReviewsTable({
                         <div className="flex items-start gap-3">
                           <Package className="w-4 h-4 text-gray-400 mt-0.5" />
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{review.productId?.name || 'Unknown Product'}</p>
-                            {review.sellerId && (
-                              <p className="text-xs text-gray-500">Sold by {review.sellerId.businessName}</p>
+                            <p className="text-sm font-medium text-gray-900">{review.product?.name || 'Unknown Product'}</p>
+                            {review.product?.sellerId && (
+                              <p className="text-xs text-gray-500">Sold by {review.product.sellerId.businessName}</p>
                             )}
                           </div>
                         </div>
@@ -270,13 +258,13 @@ export default function ReviewsTable({
                         {review.status === 'pending' && (
                           <div className="grid grid-cols-2 gap-2">
                             <button
-                              onClick={() => onUpdateStatus(review._id, 'approved')}
+                              onClick={() => onUpdateStatus(review.id, 'approved')}
                               className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
                             >
                               Approve
                             </button>
                             <button
-                              onClick={() => onUpdateStatus(review._id, 'rejected')}
+                              onClick={() => onUpdateStatus(review.id, 'rejected')}
                               className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
                             >
                               Reject
@@ -285,7 +273,7 @@ export default function ReviewsTable({
                         )}
 
                         <button
-                          onClick={() => onDeleteReview(review._id)}
+                          onClick={() => onDeleteReview(review.id)}
                           className="w-full px-3 py-2 text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2"
                         >
                           <Trash2 className="w-4 h-4" />

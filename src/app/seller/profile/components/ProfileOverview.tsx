@@ -1,5 +1,5 @@
 import { User, Mail, Phone, MapPin, Shield, CheckCircle, AlertCircle, X } from 'lucide-react';
-import { SellerProfile, SellerProfileStats } from '@/types/sellerProfile';
+import { SellerProfile, SellerProfileStats } from '@/types/seller/profile';
 
 interface ProfileOverviewProps {
   profile?: SellerProfile;

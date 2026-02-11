@@ -1,7 +1,7 @@
 import {
   ShoppingCart, Clock, Package, Truck, CheckCircle, XCircle, AlertTriangle
 } from 'lucide-react';
-import { OrdersOverviewProps } from '@/types/order';
+import { OrdersOverviewProps } from '@/types/admin/orders';
 
 export default function OrdersOverview({ stats, onTabChange, activeTab }: OrdersOverviewProps) {
   const statItems = [
@@ -11,7 +11,7 @@ export default function OrdersOverview({ stats, onTabChange, activeTab }: Orders
     { label: 'Shipped', value: stats.shipped, icon: Truck, tab: 'shipped' },
     { label: 'Delivered', value: stats.delivered, icon: CheckCircle, tab: 'delivered' },
     { label: 'Cancelled', value: stats.cancelled, icon: XCircle, tab: 'cancelled' },
-    { label: 'Issues', value: stats.issues, icon: AlertTriangle, tab: 'issues' }
+    { label: 'Returned', value: stats.returned, icon: AlertTriangle, tab: 'returned' }
   ];
 
   return (

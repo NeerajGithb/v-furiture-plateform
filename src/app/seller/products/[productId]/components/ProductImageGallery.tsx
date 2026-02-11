@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Package } from 'lucide-react';
-import { SellerProduct } from '@/types/sellerProducts';
+import { SellerProduct } from '@/types/seller/products';
 
 interface ProductImageGalleryProps {
   product: SellerProduct;

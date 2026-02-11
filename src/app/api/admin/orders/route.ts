@@ -46,12 +46,9 @@ export const POST = withAdminAuth(
         const { action } = body;
 
         if (action === "export") {
-          // Validate export request
           const validatedRequest = OrderExportSchema.parse(body);
           const orders = await adminOrdersService.exportOrders(validatedRequest);
           
-          // In a real implementation, you would generate CSV/Excel file here
-          // For now, just return the data
           return ApiResponseBuilder.success({
             orders,
             format: validatedRequest.format,

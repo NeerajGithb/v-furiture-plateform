@@ -1,14 +1,30 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { useGlobalFilterStore } from '@/stores/globalFilterStore';
+import { useCouponUIStore } from '@/stores/admin/couponStore';
 import { adminCouponsService } from '../../services/admin/adminCouponsService';
 import { toast } from 'react-hot-toast';
+import type { AdminCoupon, CouponCreateRequest, CouponUpdateRequest } from '@/types/admin/coupons';
 
-// Main hook for fetching coupons
 export const useAdminCoupons = () => {
+  const { admin, isLoading: authLoading } = useAuthGuard();
+  const period = useGlobalFilterStore((s) => s.period);
+  const currentPage = useCouponUIStore((s) => s.currentPage);
+  
   return useQuery({
-    queryKey: ['admin-coupons'],
-    queryFn: () => adminCouponsService.getCoupons(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    queryKey: ['admin-coupons', period, currentPage],
+    queryFn: () => adminCouponsService.getCoupons({ period, page: currentPage, limit: 10 }),
+    enabled: !!admin && !authLoading,
+  });
+};
+
+export const useAdminCouponStats = () => {
+  const { admin, isLoading: authLoading } = useAuthGuard();
+  
+  return useQuery({
+    queryKey: ['admin-coupon-stats'],
+    queryFn: () => adminCouponsService.getCouponStats(),
+    enabled: !!admin && !authLoading,
   });
 };
 
@@ -17,7 +33,7 @@ export const useCreateCoupon = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: any) => adminCouponsService.createCoupon(data),
+    mutationFn: (data: CouponCreateRequest) => adminCouponsService.createCoupon(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-coupons'] });
       toast.success('Coupon created successfully!');
@@ -33,7 +49,7 @@ export const useUpdateCoupon = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ couponId, data }: { couponId: string; data: any }) =>
+    mutationFn: ({ couponId, data }: { couponId: string; data: CouponUpdateRequest }) =>
       adminCouponsService.updateCoupon(couponId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-coupons'] });

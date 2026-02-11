@@ -1,58 +1,31 @@
 import { BasePrivateService } from "../baseService";
-import { AdminSeller, SellerStats } from "@/lib/domain/admin/sellers/IAdminSellersRepository";
+import type { AdminSeller, SellerStats, AdminSellersQueryRequest } from "@/types/admin/sellers";
 import { PaginationResult } from "@/lib/domain/shared/types";
-
-interface SellersQuery {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  verified?: boolean;
-}
-
-interface SellerStatusUpdate {
-  status: "active" | "pending" | "suspended" | "inactive";
-  reason?: string;
-}
-
-interface SellerVerificationUpdate {
-  verified: boolean;
-}
 
 class AdminSellersService extends BasePrivateService {
   constructor() {
     super("/api");
   }
 
-  async getSellers(params: SellersQuery = {}): Promise<PaginationResult<AdminSeller>> {
-    const response = await this.get<PaginationResult<AdminSeller>>("/admin/sellers", params);
-
-    if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch sellers.",
-      );
-    }
+  async getSellers(params: Partial<AdminSellersQueryRequest> = {}): Promise<PaginationResult<AdminSeller>> {
+    return await this.getPaginated<AdminSeller>("/admin/sellers", params);
   }
 
-  async getSellerStats(): Promise<SellerStats> {
-    const response = await this.get<SellerStats>("/admin/sellers", { action: "stats" });
+  async getSellerStats(period?: string): Promise<SellerStats> {
+    const response = await this.get<SellerStats>("/admin/sellers", { stats: "true", period });
 
     if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch seller statistics.",
-      );
+      return response.data as SellerStats;
     }
+    
+    throw new Error(response.error?.message || "Failed to fetch seller statistics");
   }
 
   async getSellerById(sellerId: string): Promise<AdminSeller> {
-    const response = await this.get<AdminSeller>("/admin/sellers", { action: "getById", sellerId });
+    const response = await this.get<AdminSeller>("/admin/sellers", { action: "seller-details", sellerId });
 
     if (response.success) {
-      return response.data!;
+      return response.data as AdminSeller;
     } else {
       throw new Error(
         response.error?.message || "Failed to fetch seller.",
@@ -60,15 +33,16 @@ class AdminSellersService extends BasePrivateService {
     }
   }
 
-  async updateSellerStatus(sellerId: string, data: SellerStatusUpdate): Promise<AdminSeller> {
+  async updateSellerStatus(sellerId: string, status: string, reason?: string): Promise<AdminSeller> {
     const response = await this.patch<AdminSeller>("/admin/sellers", {
-      action: "updateStatus",
+      action: "update-status",
       sellerId,
-      ...data,
+      status,
+      reason,
     });
 
     if (response.success) {
-      return response.data!;
+      return response.data as AdminSeller;
     } else {
       throw new Error(
         response.error?.message || "Failed to update seller status.",
@@ -76,15 +50,15 @@ class AdminSellersService extends BasePrivateService {
     }
   }
 
-  async updateSellerVerification(sellerId: string, data: SellerVerificationUpdate): Promise<AdminSeller> {
+  async updateSellerVerification(sellerId: string, verified: boolean): Promise<AdminSeller> {
     const response = await this.patch<AdminSeller>("/admin/sellers", {
-      action: "updateVerification",
+      action: "update-verification",
       sellerId,
-      ...data,
+      verified,
     });
 
     if (response.success) {
-      return response.data!;
+      return response.data as AdminSeller;
     } else {
       throw new Error(
         response.error?.message || "Failed to update seller verification.",

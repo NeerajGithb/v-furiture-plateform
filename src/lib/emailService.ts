@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
-const CLIENT_URL = process.env.NEXT_PUBLIC_CLIENT_URL || 'http://localhost:3000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
 const APP_NAME = 'VFurniture';
 const SENDER_NAME = 'VFurniture Support';
 
@@ -228,7 +228,7 @@ export function getOrderStatusUpdateEmailHTML(order: any, customerName: string):
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="background-color:#000000;border-radius:0;">
-                    <a href="${CLIENT_URL}/order-details/${order.orderNumber}" style="display:inline-block;padding:14px 32px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;letter-spacing:0.5px;" target="_blank">VIEW ORDER DETAILS</a>
+                    <a href="${APP_URL}/order-details/${order.orderNumber}" style="display:inline-block;padding:14px 32px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;letter-spacing:0.5px;" target="_blank">VIEW ORDER DETAILS</a>
                   </td>
                 </tr>
               </table>
@@ -352,7 +352,7 @@ export function getResetPasswordEmailHTML(resetCode: string, userName: string): 
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="background-color:#000000;border-radius:0;">
-                    <a href="${CLIENT_URL}/reset-password?token=${resetCode}" style="display:inline-block;padding:14px 32px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;letter-spacing:0.5px;" target="_blank">RESET PASSWORD</a>
+                    <a href="${APP_URL}/reset-password?token=${resetCode}" style="display:inline-block;padding:14px 32px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;letter-spacing:0.5px;" target="_blank">RESET PASSWORD</a>
                   </td>
                 </tr>
               </table>

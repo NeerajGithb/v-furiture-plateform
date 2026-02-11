@@ -1,116 +1,124 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   useAdminProduct,
   useUpdateAdminProduct,
+  useTogglePublishProduct,
   useDeleteAdminProduct
 } from '@/hooks/admin/useAdminProducts';
+import { useProductUIStore } from '@/stores/admin/productStore';
+import { useConfirm } from '@/contexts/ConfirmContext';
+import { LoaderGuard } from '@/components/ui/LoaderGuard';
 import ProductHeader from './components/ProductHeader';
 import ProductSidebar from './components/ProductSidebar';
 import ProductDetails from './components/ProductDetails';
 import ProductModals from './components/ProductModals';
-import ProductDetailSkeleton from './components/ProductDetailSkeleton';
+import PageHeader from '@/components/PageHeader';
 
 interface ProductDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
-    const router = useRouter();
-    const [productId, setProductId] = useState<string>('');
-    const [showRejectModal, setShowRejectModal] = useState(false);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    
-    // React Query hooks
-    const { data: currentProduct, isLoading, error, refetch } = useAdminProduct(productId);
-    const { mutate: updateProduct, isPending: updatePending } = useUpdateAdminProduct();
-    const { mutate: deleteProduct, isPending: deletePending } = useDeleteAdminProduct();
+  const router = useRouter();
+  const [productId, setProductId] = useState<string>('');
+  
+  const showRejectModal = useProductUIStore(s => s.showRejectModal);
+  const setShowRejectModal = useProductUIStore(s => s.setShowRejectModal);
+  const showDeleteModal = useProductUIStore(s => s.showDeleteModal);
+  const setShowDeleteModal = useProductUIStore(s => s.setShowDeleteModal);
+  
+  const { data: product, isPending, error, refetch, isFetching } = useAdminProduct(productId);
+  const updateProduct = useUpdateAdminProduct();
+  const togglePublish = useTogglePublishProduct();
+  const deleteProduct = useDeleteAdminProduct();
+  const { confirm } = useConfirm();
 
-    const isMutating = updatePending || deletePending;
+  const isMutating = updateProduct.isPending || togglePublish.isPending || deleteProduct.isPending;
 
-    useEffect(() => {
-        params.then(p => setProductId(p.id));
-    }, [params]);
+  useEffect(() => {
+    params.then(p => setProductId(p.id));
+  }, [params]);
 
-    const handleApprove = async () => {
-        if (!currentProduct) return;
-        updateProduct({ productId: currentProduct._id, data: { status: 'approved' } });
-    };
+  const handleApprove = () => {
+    if (!product) return;
+    updateProduct.mutate({ productId: product.id, data: { status: 'APPROVED' } });
+  };
 
-    const handleReject = async (reason: string) => {
-        if (!currentProduct) return;
-        updateProduct({ productId: currentProduct._id, data: { status: 'rejected', rejectionReason: reason } });
-    };
+  const handleReject = (reason: string) => {
+    if (!product) return;
+    updateProduct.mutate({ productId: product.id, data: { status: 'REJECTED', rejectionReason: reason } });
+  };
 
-    const handleSetPending = async () => {
-        if (!currentProduct) return;
-        updateProduct({ productId: currentProduct._id, data: { status: 'pending' } });
-    };
+  const handleSetPending = () => {
+    if (!product) return;
+    updateProduct.mutate({ productId: product.id, data: { status: 'PENDING' } });
+  };
 
-    const handleDelete = async () => {
-        if (!currentProduct) return;
-        deleteProduct(currentProduct._id);
+  const handleTogglePublish = () => {
+    if (!product) return;
+    togglePublish.mutate({ productId: product.id, isPublished: !product.isPublished });
+  };
+
+  const handleDelete = () => {
+    if (!product) return;
+    confirm({
+      title: 'Delete Product',
+      message: 'Are you sure you want to delete this product? This action cannot be undone.',
+      type: 'delete',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        deleteProduct.mutate(product.id);
         router.push('/admin/products');
-    };
+      }
+    });
+  };
 
-    return (
-        <>
-            {isLoading && <ProductDetailSkeleton />}
-            {!isLoading && error && (
-                <div className="p-6">
-                    <div className="bg-red-50 border border-red-200 rounded p-4 text-center">
-                        <p className="text-red-800">{error instanceof Error ? error.message : 'Product not found'}</p>
-                        <div className="mt-4 flex gap-2 justify-center">
-                            <button
-                                onClick={() => refetch()}
-                                className="text-blue-600 hover:text-blue-700 font-medium"
-                            >
-                                Retry
-                            </button>
-                            <button
-                                onClick={() => router.push('/admin/products')}
-                                className="text-blue-600 hover:text-blue-700 font-medium"
-                            >
-                                ← Back to Products
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {!isLoading && !error && currentProduct && (
-                <div className="p-6 bg-gray-50 min-h-screen">
-                    <ProductHeader
-                        product={currentProduct}
-                        isMutating={isMutating}
-                        onApprove={handleApprove}
-                        onReject={() => setShowRejectModal(true)}
-                        onSetPending={() => handleSetPending()}
-                        onDelete={() => setShowDeleteModal(true)}
-                    />
+  return (
+    <>
+      <PageHeader
+        title="Product Details"
+        description="View and manage product information"
+        onRefresh={refetch}
+        isRefreshing={isFetching}
+      />
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Left Column - Images & Analytics */}
-                        <ProductSidebar product={currentProduct} />
+      <LoaderGuard isLoading={isPending} error={error} isEmpty={!product}>
+        {() => (
+          <>
+            <ProductHeader
+              product={product!}
+              isMutating={isMutating}
+              onApprove={handleApprove}
+              onReject={() => setShowRejectModal(true)}
+              onSetPending={handleSetPending}
+              onTogglePublish={handleTogglePublish}
+              onDelete={handleDelete}
+            />
 
-                        {/* Right Column - Details */}
-                        <div className="lg:col-span-2">
-                            <ProductDetails product={currentProduct} />
-                        </div>
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <ProductSidebar product={product!} />
+              <div className="lg:col-span-2">
+                <ProductDetails product={product!} />
+              </div>
+            </div>
 
-                    <ProductModals
-                        product={currentProduct}
-                        isMutating={isMutating}
-                        showRejectModal={showRejectModal}
-                        showDeleteModal={showDeleteModal}
-                        onCloseRejectModal={() => setShowRejectModal(false)}
-                        onCloseDeleteModal={() => setShowDeleteModal(false)}
-                        onReject={handleReject}
-                        onDelete={handleDelete}
-                    />
-                </div>
-            )}
-        </>
-    );
+            <ProductModals
+              product={product!}
+              isMutating={isMutating}
+              showRejectModal={showRejectModal}
+              showDeleteModal={showDeleteModal}
+              onCloseRejectModal={() => setShowRejectModal(false)}
+              onCloseDeleteModal={() => setShowDeleteModal(false)}
+              onReject={handleReject}
+              onDelete={handleDelete}
+            />
+          </>
+        )}
+      </LoaderGuard>
+    </>
+  );
 }

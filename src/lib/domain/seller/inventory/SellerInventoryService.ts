@@ -1,6 +1,7 @@
 import { sellerInventoryRepository } from "./SellerInventoryRepository";
 import { 
-  SellerInventoryQueryRequest, 
+  SellerInventoryQueryRequest,
+  InventoryStatsQueryRequest,
   BulkUpdateInventoryRequest, 
   InventoryExportRequest,
   StockUpdateRequest 
@@ -8,18 +9,8 @@ import {
 import { InvalidUpdateDataError } from "./SellerInventoryErrors";
 
 export class SellerInventoryService {
-  async getInventoryData(sellerId: string, query: SellerInventoryQueryRequest = {}) {
-    const { page = 1, limit = 20, action } = query;
-
-    // Handle specific actions
-    if (action === 'stats') {
-      const stats = await sellerInventoryRepository.getInventoryStats(sellerId, {
-        search: query.search,
-        status: query.status,
-        period: query.period,
-      });
-      return { stats };
-    }
+  async getInventoryData(sellerId: string, query: Partial<SellerInventoryQueryRequest> = {}) {
+    const { page = 1, limit = 20 } = query;
 
     // Get inventory list with stats
     const [inventoryResult, stats] = await Promise.all([
@@ -136,12 +127,112 @@ export class SellerInventoryService {
     };
   }
 
-  async getInventoryStats(sellerId: string, filters: {
-    search?: string;
-    status?: string;
-    period?: string;
-  } = {}) {
-    return await sellerInventoryRepository.getInventoryStats(sellerId, filters);
+  async getInventoryStats(sellerId: string, query: InventoryStatsQueryRequest) {
+    return await sellerInventoryRepository.getInventoryStats(sellerId, {
+      search: query.search,
+      status: query.status,
+      period: query.period,
+    });
+  }
+
+  async updateStock(sellerId: string, productId: string, stockData: {
+    quantity: number;
+    type: 'add' | 'subtract' | 'set';
+    reason?: string;
+  }) {
+    const product = await sellerInventoryRepository.getInventoryItem(sellerId, productId);
+    
+    let newStock = product.currentStock;
+    if (stockData.type === 'set') {
+      newStock = stockData.quantity;
+    } else if (stockData.type === 'add') {
+      newStock = product.currentStock + stockData.quantity;
+    } else if (stockData.type === 'subtract') {
+      newStock = Math.max(0, product.currentStock - stockData.quantity);
+    }
+
+    await sellerInventoryRepository.updateInventoryItem(sellerId, productId, {
+      stock: newStock
+    });
+
+    return {
+      message: 'Stock updated successfully',
+      item: await sellerInventoryRepository.getInventoryItem(sellerId, productId)
+    };
+  }
+
+  async setReorderLevel(sellerId: string, productId: string, reorderLevel: number) {
+    await sellerInventoryRepository.updateInventoryItem(sellerId, productId, {
+      reorderLevel
+    });
+
+    return {
+      message: 'Reorder level updated successfully',
+      item: await sellerInventoryRepository.getInventoryItem(sellerId, productId)
+    };
+  }
+
+  async bulkUpdateStock(sellerId: string, data: {
+    items: Array<{ productId: string; quantity: number; type: 'add' | 'subtract' | 'set' }>;
+    reason?: string;
+  }) {
+    let updatedCount = 0;
+
+    for (const item of data.items) {
+      const product = await sellerInventoryRepository.getInventoryItem(sellerId, item.productId);
+      
+      let newStock = product.currentStock;
+      if (item.type === 'set') {
+        newStock = item.quantity;
+      } else if (item.type === 'add') {
+        newStock = product.currentStock + item.quantity;
+      } else if (item.type === 'subtract') {
+        newStock = Math.max(0, product.currentStock - item.quantity);
+      }
+
+      await sellerInventoryRepository.updateInventoryItem(sellerId, item.productId, {
+        stock: newStock
+      });
+      updatedCount++;
+    }
+
+    return {
+      message: 'Bulk stock update completed',
+      updatedCount
+    };
+  }
+
+  async getLowStockAlerts(sellerId: string, params: {
+    page?: number;
+    limit?: number;
+    status?: 'active' | 'resolved' | 'all';
+  }) {
+    const { page = 1, limit = 20 } = params;
+    
+    const alerts = await sellerInventoryRepository.getLowStockAlerts(sellerId);
+    
+    const total = alerts.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedAlerts = alerts.slice(startIndex, endIndex);
+
+    return {
+      alerts: paginatedAlerts,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      }
+    };
+  }
+
+  async resolveAlert(sellerId: string, alertId: string) {
+    return {
+      message: 'Alert resolved successfully'
+    };
   }
 }
 

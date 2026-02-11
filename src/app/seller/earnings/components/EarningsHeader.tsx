@@ -1,7 +1,7 @@
 'use client';
 
 import { Download } from 'lucide-react';
-import { EarningsHeaderProps } from '@/types/sellerEarnings';
+import { EarningsHeaderProps } from '@/types/seller/earnings';
 
 export default function EarningsHeader({
   period,

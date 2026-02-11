@@ -10,12 +10,22 @@ export interface AdminOrder {
     email: string;
   };
   items: Array<{
-    productId: string;
-    productName: string;
+    productId: {
+      id: string;
+      name: string;
+      sku: string;
+      mainImage?: {
+        url: string;
+        alt?: string;
+      };
+    };
     quantity: number;
     price: number;
-    sellerId: string;
-    sellerName: string;
+    sellerId: {
+      id: string;
+      businessName: string;
+      email: string;
+    };
   }>;
   totalAmount: number;
   orderStatus: OrderStatus;
@@ -24,10 +34,11 @@ export interface AdminOrder {
   shippingAddress: {
     fullName: string;
     phone: string;
-    address: string;
+    addressLine1: string;
+    addressLine2?: string;
     city: string;
     state: string;
-    zipCode: string;
+    postalCode: string;
     country: string;
   };
   billingAddress?: {
@@ -38,6 +49,13 @@ export interface AdminOrder {
     state: string;
     zipCode: string;
     country: string;
+  };
+  priceBreakdown?: {
+    subtotal: number;
+    couponDiscount?: number;
+    shipping: number;
+    tax: number;
+    total: number;
   };
   notes?: string;
   trackingNumber?: string;
@@ -60,47 +78,10 @@ export interface OrderStats {
   paidRevenue: number;
   pendingRevenue: number;
   avgOrderValue: number;
-  byStatus: Array<{
-    status: OrderStatus;
-    count: number;
-    revenue: number;
-  }>;
-  byPaymentStatus: Array<{
-    status: PaymentStatus;
-    count: number;
-    revenue: number;
-  }>;
-  recentOrders: Array<{
-    id: string;
-    orderNumber: string;
-    customerName: string;
-    totalAmount: number;
-    status: OrderStatus;
-    createdAt: Date;
-  }>;
-}
-
-export interface OrderTrend {
-  date: string;
-  orders: number;
-  revenue: number;
-  avgOrderValue: number;
 }
 
 export interface IAdminOrdersRepository {
-  // Order queries
-  findById(id: string): Promise<AdminOrder | null>;
-  findByOrderNumber(orderNumber: string): Promise<AdminOrder | null>;
   findMany(query: AdminOrdersQueryRequest): Promise<PaginationResult<AdminOrder>>;
   getStats(period: string): Promise<OrderStats>;
-  getTrends(startDate: Date, endDate: Date, groupBy: string): Promise<OrderTrend[]>;
-  
-  // Order management
-  updateOrderStatus(orderId: string, status: OrderStatus, notes?: string): Promise<AdminOrder>;
-  updatePaymentStatus(orderId: string, status: PaymentStatus, notes?: string): Promise<AdminOrder>;
-  addTrackingNumber(orderId: string, trackingNumber: string): Promise<AdminOrder>;
-  updateEstimatedDelivery(orderId: string, estimatedDelivery: Date): Promise<AdminOrder>;
-  
-  // Export
   exportOrders(query: AdminOrdersQueryRequest): Promise<AdminOrder[]>;
 }

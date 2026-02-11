@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { AdminProduct } from '@/types/adminProduct';
+import type { AdminProduct } from '@/types/admin/products';
 
 interface ProductModalsProps {
-  product: AdminProduct | null;
+  product?: AdminProduct;
   isMutating: boolean;
   showRejectModal: boolean;
   showDeleteModal: boolean;
@@ -13,7 +13,6 @@ interface ProductModalsProps {
 }
 
 export default function ProductModals({
-  product,
   isMutating,
   showRejectModal,
   showDeleteModal,
@@ -34,7 +33,6 @@ export default function ProductModals({
 
   return (
     <>
-      {/* Reject Modal */}
       {showRejectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
@@ -69,7 +67,6 @@ export default function ProductModals({
         </div>
       )}
 
-      {/* Delete Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">

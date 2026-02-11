@@ -1,26 +1,20 @@
 import React from 'react';
-import { AdminUser } from '@/lib/domain/admin/users/IAdminUsersRepository';
+import type { AdminUser } from '@/types/admin/users';
 import { formatDate } from '@/utils/formatDate';
 import { 
   Mail, 
   MailCheck, 
-  Eye, 
-  UserX, 
-  UserCheck 
+  Eye
 } from 'lucide-react';
 
 interface UsersListProps {
   users: AdminUser[];
   onViewUser: (userId: string) => void;
-  onUpdateStatus: (userId: string, status: string) => void;
-  isUpdating: boolean;
 }
 
 export const UsersList: React.FC<UsersListProps> = ({
   users,
-  onViewUser,
-  onUpdateStatus,
-  isUpdating
+  onViewUser
 }) => {
   const getStatusBadge = (user: AdminUser) => {
     if (user.status === 'suspended') {
@@ -73,34 +67,13 @@ export const UsersList: React.FC<UsersListProps> = ({
                   {formatDate(user.createdAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onViewUser(user.id)}
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
-                      title="View User Details"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    {user.status === 'suspended' ? (
-                      <button
-                        onClick={() => onUpdateStatus(user.id, 'active')}
-                        disabled={isUpdating}
-                        className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
-                        title="Activate User"
-                      >
-                        <UserCheck className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => onUpdateStatus(user.id, 'suspended')}
-                        disabled={isUpdating}
-                        className="p-1.5 text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
-                        title="Suspend User"
-                      >
-                        <UserX className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    onClick={() => onViewUser(user.id)}
+                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                    title="View User Details"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
                 </td>
               </tr>
             ))}

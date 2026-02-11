@@ -1,12 +1,13 @@
 import { z } from "zod";
+import { PeriodSchema } from "@/lib/domain/shared/commonSchemas";
 
 export const SellerEarningsQuerySchema = z.object({
-  period: z.enum(['7days', '30days', '90days', '1year', 'all']).default('30days'),
+  period: PeriodSchema.optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(50).default(20),
   status: z.enum(['all', 'pending', 'completed', 'failed']).default('all'),
   search: z.string().optional(),
-  action: z.enum(['summary', 'transactions', 'export', 'payout', 'payouts']).optional(),
+  action: z.enum(['summary', 'transactions', 'export', 'payout', 'payouts', 'analytics']).optional(),
 });
 
 export const PayoutRequestSchema = z.object({
@@ -20,7 +21,7 @@ export const PayoutRequestSchema = z.object({
 });
 
 export const EarningsExportSchema = z.object({
-  period: z.enum(['7days', '30days', '90days', '1year']).default('30days'),
+  period: PeriodSchema.optional(),
   format: z.enum(['csv', 'json']).default('csv'),
 });
 

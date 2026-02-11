@@ -1,39 +1,34 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useGlobalFilterStore } from "@/stores/globalFilterStore";
+import { useReviewUIStore } from "@/stores/admin/reviewStore";
 import { adminReviewsService } from "@/services/admin/adminReviewsService";
 import { 
-  AdminReviewsQuery,
   AdminReviewUpdate,
   AdminReviewBulkUpdate
-} from "@/types/review";
+} from "@/types/admin/reviews";
 
-export const useAdminReviews = (params: AdminReviewsQuery = {}, enabled: boolean = true) => {
+export const useAdminReviews = () => {
+  const { admin, isLoading: authLoading } = useAuthGuard();
+  const period = useGlobalFilterStore(s => s.period);
+  const currentPage = useReviewUIStore(s => s.currentPage);
+  
   return useQuery({
-    queryKey: ["admin-reviews", params],
-    queryFn: () => adminReviewsService.getReviews(params),
-    enabled: enabled,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    queryKey: ["admin-reviews", period, currentPage],
+    queryFn: () => adminReviewsService.getReviews({ period, page: currentPage, limit: 10 }),
+    enabled: !!admin && !authLoading,
   });
 };
 
-export const useAdminReviewStats = (enabled: boolean = true) => {
+export const useAdminReviewStats = () => {
+  const { admin, isLoading: authLoading } = useAuthGuard();
+  const period = useGlobalFilterStore(s => s.period);
+  
   return useQuery({
-    queryKey: ["admin-review-stats"],
-    queryFn: () => adminReviewsService.getReviewStats(),
-    enabled: enabled,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-};
-
-export const useAdminReview = (reviewId: string, enabled: boolean = true) => {
-  return useQuery({
-    queryKey: ["admin-review", reviewId],
-    queryFn: () => adminReviewsService.getReviewById(reviewId),
-    enabled: enabled && !!reviewId,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    queryKey: ["admin-review-stats", period],
+    queryFn: () => adminReviewsService.getReviewStats(period),
+    enabled: !!admin && !authLoading,
   });
 };
 
@@ -43,9 +38,8 @@ export const useUpdateAdminReviewStatus = () => {
   return useMutation({
     mutationFn: ({ reviewId, data }: { reviewId: string; data: AdminReviewUpdate }) =>
       adminReviewsService.updateReviewStatus(reviewId, data),
-    onSuccess: (updatedReview, { reviewId }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
-      queryClient.setQueryData(["admin-review", reviewId], updatedReview);
       queryClient.invalidateQueries({ queryKey: ["admin-review-stats"] });
       toast.success("Review status updated successfully");
     },
@@ -60,9 +54,8 @@ export const useDeleteAdminReview = () => {
 
   return useMutation({
     mutationFn: (reviewId: string) => adminReviewsService.deleteReview(reviewId),
-    onSuccess: (_, reviewId) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
-      queryClient.removeQueries({ queryKey: ["admin-review", reviewId] });
       queryClient.invalidateQueries({ queryKey: ["admin-review-stats"] });
       toast.success("Review deleted successfully");
     },

@@ -252,7 +252,7 @@ export default function TwoStepSellerSignup() {
                     {(error || (step1Data.password.length > 0 && step1Data.password.length < 6) || (step1Data.confirmPassword.length > 0 && step1Data.password !== step1Data.confirmPassword)) && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-sm text-red-600">
-                          {error?.message || 
+                          {(error ? String(error.message || error) : '') || 
                            (step1Data.password.length > 0 && step1Data.password.length < 6 && 'Password must be at least 6 characters') ||
                            (step1Data.confirmPassword.length > 0 && step1Data.password !== step1Data.confirmPassword && 'Passwords do not match')}
                         </p>
@@ -342,7 +342,7 @@ export default function TwoStepSellerSignup() {
 
                     {error && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-sm text-red-600">{error}</p>
+                        <p className="text-sm text-red-600">{String(error.message || error)}</p>
                       </div>
                     )}
 
@@ -481,7 +481,7 @@ export default function TwoStepSellerSignup() {
 
                     {error && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-sm text-red-600">{error}</p>
+                        <p className="text-sm text-red-600">{String(error.message || error)}</p>
                       </div>
                     )}
 

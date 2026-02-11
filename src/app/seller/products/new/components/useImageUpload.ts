@@ -1,38 +1,38 @@
 import { useState, useCallback } from 'react';
-import { useUpload } from '@/hooks/useUpload';
+import { useUploadFile } from '@/hooks/useUpload';
 
 export function useImageUpload(isEditMode: boolean) {
   const [mainImage, setMainImage] = useState<string>('');
   const [galleryImages, setGalleryImages] = useState<Array<{ url: string; alt?: string }>>([]);
   
-  const { uploadFile, isUploading: isUploadingMain } = useUpload();
-  const { uploadFile: uploadGalleryFile, isUploading: isUploadingGallery } = useUpload();
+  const mainUpload = useUploadFile();
+  const galleryUpload = useUploadFile();
+  const isUploadingMain = mainUpload.isPending;
+  const isUploadingGallery = galleryUpload.isPending;
 
   const handleMainImageUpload = useCallback(async (file: File) => {
-    try {
-      const result = await uploadFile(file);
-      if (result?.url) {
-        setMainImage(result.url);
+    mainUpload.mutate({ file, folder: 'products' }, {
+      onSuccess: (result) => {
+        if (result?.url) {
+          setMainImage(result.url);
+        }
       }
-    } catch (error) {
-      console.error('Failed to upload main image:', error);
-    }
-  }, [uploadFile]);
+    });
+  }, [mainUpload]);
 
   const handleRemoveMainImage = useCallback(() => {
     setMainImage('');
   }, []);
 
   const handleGalleryImageUpload = useCallback(async (file: File) => {
-    try {
-      const result = await uploadGalleryFile(file);
-      if (result?.url) {
-        setGalleryImages(prev => [...prev, { url: result.url, alt: '' }]);
+    galleryUpload.mutate({ file, folder: 'products' }, {
+      onSuccess: (result) => {
+        if (result?.url) {
+          setGalleryImages(prev => [...prev, { url: result.url, alt: '' }]);
+        }
       }
-    } catch (error) {
-      console.error('Failed to upload gallery image:', error);
-    }
-  }, [uploadGalleryFile]);
+    });
+  }, [galleryUpload]);
 
   const handleRemoveGalleryImage = useCallback((index: number) => {
     setGalleryImages(prev => prev.filter((_, i) => i !== index));

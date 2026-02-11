@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { PeriodSchema, SortOrderSchema } from "../../shared/commonSchemas";
 
 export const FinanceQuerySchema = z.object({
-  period: z.enum(["7d", "30d", "90d", "1y"]).default("30d"),
+  period: PeriodSchema.optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   groupBy: z.enum(["day", "week", "month"]).default("day"),
@@ -13,7 +14,7 @@ export const PayoutQuerySchema = z.object({
   sellerId: z.string().optional(),
   status: z.enum(["pending", "processing", "completed", "failed"]).optional(),
   sortBy: z.enum(["createdAt", "amount", "status"]).default("createdAt"),
-  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  sortOrder: SortOrderSchema.default("desc"),
 });
 
 export const PayoutCreateSchema = z.object({

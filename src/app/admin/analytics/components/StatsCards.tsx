@@ -1,6 +1,6 @@
 import { IndianRupee, ShoppingCart, Package, Users, TrendingUp, TrendingDown } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
-import { StatsCardsProps } from '@/types';
+import { AnalyticsOverview } from '@/types/admin/analytics';
 
 const GrowthBadge = ({ value }: { value: number }) => {
   if (value === 0) return null;
@@ -13,32 +13,14 @@ const GrowthBadge = ({ value }: { value: number }) => {
   );
 };
 
-export default function StatsCards({
-  revenue,
-  orders,
-  products,
-  users,
-  growth,
-  selectedMetric = 'revenue',
-  onMetricSelect
-}: StatsCardsProps) {
-  const handleCardClick = (metric: string) => {
-    onMetricSelect(metric);
-  };
+interface StatsCardsProps {
+  overview: AnalyticsOverview;
+}
 
-  const getCardClasses = (metric: string) => {
-    const isSelected = selectedMetric === metric;
-    const clickable = 'cursor-pointer hover:border-gray-400 transition-colors';
-    const selected = isSelected ? 'ring-2 ring-gray-900 border-transparent shadow-sm' : 'border-gray-200';
-    return `bg-white rounded-lg border p-5 ${clickable} ${selected}`;
-  };
-
+export default function StatsCards({ overview }: StatsCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div
-        className={getCardClasses('revenue')}
-        onClick={() => handleCardClick('revenue')}
-      >
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-500">Revenue</span>
           <div className="p-1.5 bg-gray-50 rounded-md">
@@ -46,18 +28,15 @@ export default function StatsCards({
           </div>
         </div>
         <div className="flex items-baseline gap-2 mb-1">
-          <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(revenue.paid)}</h3>
-          <GrowthBadge value={growth.revenue} />
+          <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(overview.totalRevenue)}</h3>
+          <GrowthBadge value={overview.revenueGrowth} />
         </div>
         <p className="text-xs text-gray-500 mt-1">
-          Completed: {formatCurrency(revenue.completed)}
+          AOV: {formatCurrency(overview.avgOrderValue)}
         </p>
       </div>
 
-      <div
-        className={getCardClasses('orders')}
-        onClick={() => handleCardClick('orders')}
-      >
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-500">Orders</span>
           <div className="p-1.5 bg-gray-50 rounded-md">
@@ -65,18 +44,15 @@ export default function StatsCards({
           </div>
         </div>
         <div className="flex items-baseline gap-2 mb-1">
-          <h3 className="text-2xl font-bold text-gray-900">{orders.total}</h3>
-          <GrowthBadge value={growth.orders} />
+          <h3 className="text-2xl font-bold text-gray-900">{overview.totalOrders.toLocaleString('en-IN')}</h3>
+          <GrowthBadge value={overview.ordersGrowth} />
         </div>
         <p className="text-xs text-gray-500 mt-1">
-          AOV: {formatCurrency(revenue.avgOrderValue)}
+          Conversion: {overview.conversionRate.toFixed(1)}%
         </p>
       </div>
 
-      <div
-        className={getCardClasses('products')}
-        onClick={() => handleCardClick('products')}
-      >
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-500">Products</span>
           <div className="p-1.5 bg-gray-50 rounded-md">
@@ -84,17 +60,14 @@ export default function StatsCards({
           </div>
         </div>
         <div className="flex items-baseline gap-2 mb-1">
-          <h3 className="text-2xl font-bold text-gray-900">{products.total}</h3>
+          <h3 className="text-2xl font-bold text-gray-900">{overview.totalProducts.toLocaleString('en-IN')}</h3>
         </div>
         <p className="text-xs text-gray-500 mt-1">
-          Published: {products.published}
+          Sellers: {overview.totalSellers.toLocaleString('en-IN')}
         </p>
       </div>
 
-      <div
-        className={getCardClasses('users')}
-        onClick={() => handleCardClick('users')}
-      >
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-500">Users</span>
           <div className="p-1.5 bg-gray-50 rounded-md">
@@ -102,12 +75,9 @@ export default function StatsCards({
           </div>
         </div>
         <div className="flex items-baseline gap-2 mb-1">
-          <h3 className="text-2xl font-bold text-gray-900">{users.total}</h3>
-          <GrowthBadge value={growth.users} />
+          <h3 className="text-2xl font-bold text-gray-900">{overview.totalUsers.toLocaleString('en-IN')}</h3>
+          <GrowthBadge value={overview.usersGrowth} />
         </div>
-        <p className="text-xs text-gray-500 mt-1">
-          Customers: {users.uniqueCustomers}
-        </p>
       </div>
     </div>
   );

@@ -40,40 +40,36 @@ export interface AdminUser {
 export interface UserStats {
   total: number;
   active: number;
-  inactive: number;
   suspended: number;
-  banned: number;
   verified: number;
-  unverified: number;
-  newUsers: number;
-  returningUsers: number;
-  totalOrders: number;
-  totalSpent: number;
-  avgOrdersPerUser: number;
-  avgSpentPerUser: number;
-  byRegistrationSource: Array<{
-    source: string;
-    count: number;
-  }>;
-  recentUsers: Array<{
+}
+
+export interface UsersWithStats {
+  stats: UserStats;
+  users: AdminUser[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+export interface UserDetails extends AdminUser {
+  orders: Array<{
     id: string;
-    name: string;
-    email: string;
-    status: UserStatus;
+    orderNumber: string;
+    totalAmount: number;
+    orderStatus: string;
+    paymentStatus: string;
     createdAt: Date;
   }>;
 }
 
 export interface IAdminUsersRepository {
-  // Essential user queries
-  findById(id: string): Promise<AdminUser | null>;
   findMany(query: AdminUsersQueryRequest): Promise<PaginationResult<AdminUser>>;
-  getStats(period: string): Promise<UserStats>;
-  
-  // Essential user management
-  updateStatus(userId: string, status: UserStatus, reason?: string): Promise<AdminUser>;
-  addNote(userId: string, note: string): Promise<AdminUser>;
-  
-  // Essential user activity
-  getOrderHistory(userId: string, limit?: number): Promise<any[]>;
+  findById(id: string): Promise<UserDetails | null>;
+  getStats(period?: string): Promise<UserStats>;
 }

@@ -1,85 +1,43 @@
 'use client';
 
-import { useState } from 'react';
 import {
   useSellerProducts,
   useSellerProductStats,
   useUpdateProductStatus,
   useDeleteProduct,
+  useDuplicateProduct,
   useBulkUpdateProducts,
   useBulkDeleteProducts,
-  useDuplicateProduct,
-  useExportProducts
 } from '@/hooks/seller/useSellerProducts';
-import { ProductsQuery, SellerProductStatus } from '@/types/sellerProducts';
-import { AlertCircle, RefreshCw } from 'lucide-react';
-import { ProductsSkeleton } from './components/ProductsSkeleton';
-import { ProductsHeader } from './components/ProductsHeader';
-import { ProductsFilters } from './components/ProductsFilters';
+import { useSellerProductsStore } from '@/stores/seller/sellerProductsStore';
+import { useConfirm } from '@/contexts/ConfirmContext';
+import { LoaderGuard } from '@/components/ui/LoaderGuard';
+import { Pagination } from '@/components/ui/Pagination';
+import PageHeader from '@/components/PageHeader';
+import { ProductsStats } from './components/ProductsStats';
 import { ProductsGrid } from './components/ProductsGrid';
-import { ProductsPagination } from './components/ProductsPagination';
+import { CheckSquare, Trash2 } from 'lucide-react';
 
 export default function SellerProductsPage() {
-  const [refreshing, setRefreshing] = useState(false);
-  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
-  
-  // Filters state
-  const [filters, setFilters] = useState<ProductsQuery>({
-    page: 1,
-    limit: 20,
-    status: 'all',
-    search: '',
-    sortBy: 'updatedAt',
-    sortOrder: 'desc'
-  });
+  const expandedProduct = useSellerProductsStore(s => s.expandedProduct);
+  const setExpandedProduct = useSellerProductsStore(s => s.setExpandedProduct);
+  const currentPage = useSellerProductsStore(s => s.currentPage);
+  const setCurrentPage = useSellerProductsStore(s => s.setCurrentPage);
+  const selectedProducts = useSellerProductsStore(s => s.selectedProducts);
+  const setSelectedProducts = useSellerProductsStore(s => s.setSelectedProducts);
+  const toggleProductSelection = useSellerProductsStore(s => s.toggleProductSelection);
+  const clearSelection = useSellerProductsStore(s => s.clearSelection);
 
-  // React Query hooks
-  const { data: productsData, isLoading, error, refetch } = useSellerProducts(filters);
-  const { data: stats } = useSellerProductStats();
+  const { data: productsData, isPending, error, refetch, isFetching } = useSellerProducts();
+  const { data: stats, isPending: statsPending } = useSellerProductStats();
   
-  // Mutations
   const updateProductStatus = useUpdateProductStatus();
   const deleteProduct = useDeleteProduct();
-  const bulkUpdateProducts = useBulkUpdateProducts();
-  const bulkDeleteProducts = useBulkDeleteProducts();
   const duplicateProduct = useDuplicateProduct();
-  const exportProducts = useExportProducts();
-
-  const products = productsData?.products || [];
-  const pagination = productsData?.pagination;
-
-  const handleExport = () => {
-    exportProducts.mutate({
-      status: filters.status === 'all' ? undefined : filters.status as SellerProductStatus,
-      format: 'xlsx'
-    });
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await refetch();
-    setTimeout(() => setRefreshing(false), 500);
-  };
-
-  const handleStatusFilter = (status: string) => {
-    setFilters(prev => ({ 
-      ...prev, 
-      status: status === 'all' ? 'all' : status as SellerProductStatus, 
-      page: 1 
-    }));
-  };
-
-  const handlePageChange = (page: number) => {
-    setFilters(prev => ({ ...prev, page }));
-  };
-
-  const handleSearchChange = (search: string) => {
-    setFilters(prev => ({ ...prev, search, page: 1 }));
-  };
-
-  const handleSortChange = (sortBy: string, sortOrder: 'asc' | 'desc') => {
-    setFilters(prev => ({ ...prev, sortBy, sortOrder }));
-  };
+  const bulkUpdate = useBulkUpdateProducts();
+  const bulkDelete = useBulkDeleteProducts();
+  
+  const { confirm } = useConfirm();
 
   const handleUpdateStatus = (productId: string, isPublished: boolean) => {
     updateProductStatus.mutate({ productId, isPublished });
@@ -93,79 +51,155 @@ export default function SellerProductsPage() {
     duplicateProduct.mutate(productId);
   };
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Products</h3>
-          <p className="text-gray-600 mb-4">
-            {error instanceof Error ? error.message : 'Unable to load products data. Please try again.'}
-          </p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? 'Retrying...' : 'Retry'}
-            </button>
-            <button
-              onClick={() => window.history.back()}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Go Back
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && productsData?.data) {
+      setSelectedProducts(productsData.data.map(p => p.id));
+    } else {
+      clearSelection();
+    }
+  };
+
+  const selectedProductsData = productsData?.data.filter(p => selectedProducts.includes(p.id)) || [];
+  const allSelectedPublished = selectedProductsData.length > 0 && selectedProductsData.every(p => p.isPublished);
+  const allSelectedUnpublished = selectedProductsData.length > 0 && selectedProductsData.every(p => !p.isPublished);
+  const hasPublished = selectedProductsData.some(p => p.isPublished);
+  const hasUnpublished = selectedProductsData.some(p => !p.isPublished);
+
+  const handleBulkPublish = () => {
+    const unpublishedIds = selectedProductsData.filter(p => !p.isPublished).map(p => p.id);
+    if (unpublishedIds.length === 0) return;
+
+    confirm({
+      title: 'Publish Products',
+      message: `Publish ${unpublishedIds.length} selected product(s)?`,
+      type: 'confirm',
+      confirmText: 'Publish',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        bulkUpdate.mutate(
+          { productIds: unpublishedIds, updates: { isPublished: true } },
+          { onSuccess: () => clearSelection() }
+        );
+      }
+    });
+  };
+
+  const handleBulkUnpublish = () => {
+    const publishedIds = selectedProductsData.filter(p => p.isPublished).map(p => p.id);
+    if (publishedIds.length === 0) return;
+
+    confirm({
+      title: 'Unpublish Products',
+      message: `Unpublish ${publishedIds.length} selected product(s)?`,
+      type: 'confirm',
+      confirmText: 'Unpublish',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        bulkUpdate.mutate(
+          { productIds: publishedIds, updates: { isPublished: false } },
+          { onSuccess: () => clearSelection() }
+        );
+      }
+    });
+  };
+
+  const handleBulkDelete = () => {
+    confirm({
+      title: 'Delete Products',
+      message: `Delete ${selectedProducts.length} selected product(s)? This action cannot be undone.`,
+      type: 'delete',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        bulkDelete.mutate(selectedProducts, { onSuccess: () => clearSelection() });
+      }
+    });
+  };
 
   return (
     <>
-      {isLoading && <ProductsSkeleton />}
-      {!isLoading && (
-        <div className="space-y-6 max-w-7xl mx-auto p-6">
-          <ProductsHeader 
-            stats={stats || { total: 0, published: 0, draft: 0, pending: 0, approved: 0, rejected: 0, lowStock: 0, outOfStock: 0 }}
-            onExport={handleExport}
-            onRefresh={handleRefresh}
-            refreshing={refreshing}
-          />
+      <PageHeader
+        title="Products"
+        description="Manage your product inventory and listings"
+        onRefresh={refetch}
+        isRefreshing={isFetching}
+        actions={
+          selectedProducts.length > 0 ? (
+            <div className="flex gap-2">
+              {hasUnpublished && (
+                <button
+                  key="publish"
+                  onClick={handleBulkPublish}
+                  disabled={bulkUpdate.isPending}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  <CheckSquare className="w-4 h-4" />
+                  Publish ({selectedProductsData.filter(p => !p.isPublished).length})
+                </button>
+              )}
+              {hasPublished && (
+                <button
+                  key="unpublish"
+                  onClick={handleBulkUnpublish}
+                  disabled={bulkUpdate.isPending}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  <CheckSquare className="w-4 h-4" />
+                  Unpublish ({selectedProductsData.filter(p => p.isPublished).length})
+                </button>
+              )}
+              <button
+                key="delete"
+                onClick={handleBulkDelete}
+                disabled={bulkDelete.isPending}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete ({selectedProducts.length})
+              </button>
+            </div>
+          ) : undefined
+        }
+      />
 
-          <ProductsFilters
-            statusFilter={filters.status || 'all'}
-            onStatusFilter={handleStatusFilter}
-            searchQuery={filters.search || ''}
-            onSearchChange={handleSearchChange}
-            sortBy={filters.sortBy || 'updatedAt'}
-            sortOrder={filters.sortOrder || 'desc'}
-            onSortChange={handleSortChange}
-          />
+      <LoaderGuard 
+        isLoading={isPending} 
+        error={error}
+        isEmpty={!productsData || (productsData.pagination?.total || 0) === 0}
+        emptyMessage="No products"
+      >
+        {() => (
+          <>
+            {stats && !statsPending && (
+              <ProductsStats stats={stats} />
+            )}
 
-          <ProductsGrid
-            products={products}
-            expandedProduct={expandedProduct}
-            onExpandProduct={setExpandedProduct}
-            onUpdateStatus={handleUpdateStatus}
-            onDeleteProduct={handleDeleteProduct}
-            onDuplicateProduct={handleDuplicateProduct}
-            isUpdating={updateProductStatus.isPending || deleteProduct.isPending || duplicateProduct.isPending}
-          />
-
-          {pagination && pagination.pages > 1 && (
-            <ProductsPagination
-              currentPage={pagination.page}
-              totalPages={pagination.pages}
-              totalItems={pagination.total}
-              itemsPerPage={pagination.limit}
-              onPageChange={handlePageChange}
+            <ProductsGrid
+              products={productsData!.data}
+              expandedProduct={expandedProduct}
+              selectedProducts={selectedProducts}
+              onExpandProduct={setExpandedProduct}
+              onToggleSelection={toggleProductSelection}
+              onSelectAll={handleSelectAll}
+              onUpdateStatus={handleUpdateStatus}
+              onDeleteProduct={handleDeleteProduct}
+              onDuplicateProduct={handleDuplicateProduct}
+              isUpdating={updateProductStatus.isPending || deleteProduct.isPending || duplicateProduct.isPending}
             />
-          )}
-        </div>
-      )}
+
+            {productsData!.pagination && productsData!.pagination.totalPages > 1 && (
+              <Pagination 
+                pagination={{
+                  ...productsData!.pagination,
+                  hasNext: productsData!.pagination.page < productsData!.pagination.totalPages,
+                  hasPrev: productsData!.pagination.page > 1,
+                }}
+                onPageChange={setCurrentPage}
+              />
+            )}
+          </>
+        )}
+      </LoaderGuard>
     </>
   );
 }

@@ -1,120 +1,39 @@
 import { BasePrivateService } from "../baseService";
-import { AdminUsersQuery } from "@/types/user";
-import { AdminUser } from "@/lib/domain/admin/users/IAdminUsersRepository";
-
-// Import AdminUserStats separately to avoid potential caching issues
-import type { AdminUserStats } from "@/types/user";
-
-interface UsersResponse {
-  users: AdminUser[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
-}
+import type { AdminUsersQueryRequest, UserDetails, UserStats } from "@/types/admin/users";
+import type { AdminUser } from "@/lib/domain/admin/users/IAdminUsersRepository";
+import { PaginationResult } from "@/lib/domain/shared/types";
 
 class AdminUsersService extends BasePrivateService {
   constructor() {
     super("/api");
   }
 
-  // Get admin users with pagination and filters
-  async getUsers(params: AdminUsersQuery = {}): Promise<UsersResponse> {
-    const response = await this.get<UsersResponse>("/admin/users", params);
-
-    if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch users.",
-      );
-    }
+  async getUsers(params: Partial<AdminUsersQueryRequest> = {}): Promise<PaginationResult<AdminUser>> {
+    return await this.getPaginated<AdminUser>("/admin/users", params);
   }
 
-  // Get user statistics
-  async getUserStats(): Promise<AdminUserStats> {
-    const response = await this.get<AdminUserStats>("/admin/users", { action: "stats" });
+  async getUserStats(period?: string): Promise<UserStats> {
+    const params: any = { stats: "true" };
+    if (period) params.period = period;
+    
+    const response = await this.get<UserStats>("/admin/users", params);
 
     if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch user statistics.",
-      );
+      return response.data as UserStats;
     }
+    
+    throw new Error(response.error?.message || "Failed to fetch user stats");
   }
 
-  // Get single user by ID
-  async getUserById(userId: string): Promise<AdminUser> {
-    const response = await this.get<AdminUser>("/admin/users", { 
-      action: "user-details", 
-      userId 
-    });
+  async getUserById(userId: string): Promise<UserDetails> {
+    const response = await this.get("/admin/users", { userId });
 
     if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch user.",
-      );
+      return response.data as UserDetails;
     }
-  }
-
-  // Update user status
-  async updateUserStatus(userId: string, status: string, reason?: string): Promise<AdminUser> {
-    const response = await this.patch<AdminUser>("/admin/users", {
-      action: "update-status",
-      userId,
-      status,
-      reason
-    });
-
-    if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to update user status.",
-      );
-    }
-  }
-
-  // Get user order history
-  async getUserOrderHistory(userId: string, limit?: number): Promise<any[]> {
-    const params: any = { action: "user-orders", userId };
-    if (limit) params.limit = limit.toString();
-
-    const response = await this.get<any[]>("/admin/users", params);
-
-    if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch user orders.",
-      );
-    }
-  }
-
-  // Add user note
-  async addUserNote(userId: string, note: string): Promise<AdminUser> {
-    const response = await this.patch<AdminUser>("/admin/users", {
-      action: "add-note",
-      userId,
-      note
-    });
-
-    if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to add user note.",
-      );
-    }
+    
+    throw new Error(response.error?.message || "Failed to fetch user");
   }
 }
 
-// Export singleton instance
 export const adminUsersService = new AdminUsersService();

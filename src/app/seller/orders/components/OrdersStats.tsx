@@ -1,7 +1,7 @@
 'use client';
 
 import { ShoppingCart, Clock, Package, Truck, CheckCircle } from 'lucide-react';
-import { OrdersStatsProps } from '@/types/sellerOrder';
+import { OrdersStatsProps } from '@/types/seller/orders';
 
 export default function OrdersStats({ stats }: OrdersStatsProps) {
   return (

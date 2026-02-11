@@ -1,48 +1,29 @@
 import { BasePrivateService } from "../baseService";
-import { 
+import type { 
   AdminProduct,
-  AdminProductsQuery,
-  AdminProductUpdate,
-  AdminProductBulkUpdate,
-  AdminProductStats
-} from "@/types/adminProduct";
-
-interface ProductsResponse {
-  products: AdminProduct[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
-}
+  ProductStats,
+  BulkOperationResult,
+  AdminProductsQueryRequest
+} from "@/types/admin/products";
+import { PaginationResult } from "@/lib/domain/shared/types";
 
 class AdminProductsService extends BasePrivateService {
   constructor() {
     super("/api");
   }
 
-  // Get admin products with pagination and filters
-  async getProducts(params: AdminProductsQuery = {}): Promise<ProductsResponse> {
-    const response = await this.get<ProductsResponse>("/admin/products", params);
-
-    if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch products.",
-      );
-    }
+  async getProducts(params: Partial<AdminProductsQueryRequest> = {}): Promise<PaginationResult<AdminProduct>> {
+    return await this.getPaginated<AdminProduct>("/admin/products", params);
   }
 
-  // Get product statistics
-  async getProductStats(): Promise<AdminProductStats> {
-    const response = await this.get<{ stats: AdminProductStats }>("/admin/products", { action: "stats" });
+  async getProductStats(period?: string): Promise<ProductStats> {
+    const params: any = { stats: "true" };
+    if (period) params.period = period;
+    
+    const response = await this.get<ProductStats>("/admin/products", params);
 
     if (response.success) {
-      return response.data!.stats;
+      return response.data as ProductStats;
     } else {
       throw new Error(
         response.error?.message || "Failed to fetch product statistics.",
@@ -50,12 +31,11 @@ class AdminProductsService extends BasePrivateService {
     }
   }
 
-  // Get single product by ID
   async getProductById(productId: string): Promise<AdminProduct> {
-    const response = await this.get<{ product: AdminProduct }>(`/admin/products/${productId}`);
+    const response = await this.get<AdminProduct>(`/admin/products/${productId}`);
 
     if (response.success) {
-      return response.data!.product;
+      return response.data as AdminProduct;
     } else {
       throw new Error(
         response.error?.message || "Failed to fetch product.",
@@ -63,12 +43,11 @@ class AdminProductsService extends BasePrivateService {
     }
   }
 
-  // Update product (approve/reject)
-  async updateProduct(productId: string, data: AdminProductUpdate): Promise<AdminProduct> {
-    const response = await this.patch<{ product: AdminProduct }>(`/admin/products/${productId}`, data);
+  async updateProduct(productId: string, data: Partial<AdminProduct>): Promise<AdminProduct> {
+    const response = await this.patch<AdminProduct>(`/admin/products/${productId}`, data);
 
     if (response.success) {
-      return response.data!.product;
+      return response.data as AdminProduct;
     } else {
       throw new Error(
         response.error?.message || "Failed to update product.",
@@ -76,7 +55,20 @@ class AdminProductsService extends BasePrivateService {
     }
   }
 
-  // Delete product
+  async togglePublishProduct(productId: string, isPublished: boolean): Promise<AdminProduct> {
+    const response = await this.post<AdminProduct>(`/admin/products/${productId}`, {
+      action: isPublished ? "publish" : "unpublish"
+    });
+
+    if (response.success) {
+      return response.data as AdminProduct;
+    } else {
+      throw new Error(
+        response.error?.message || "Failed to update publish status.",
+      );
+    }
+  }
+
   async deleteProduct(productId: string): Promise<void> {
     const response = await this.delete(`/admin/products/${productId}`);
 
@@ -87,15 +79,11 @@ class AdminProductsService extends BasePrivateService {
     }
   }
 
-  // Bulk update products
-  async bulkUpdateProducts(data: AdminProductBulkUpdate): Promise<{ modifiedCount: number; message: string }> {
-    const response = await this.patch<{ modifiedCount: number; message: string }>("/admin/products", {
-      action: "bulk",
-      ...data,
-    });
+  async bulkUpdateProducts(data: { productIds: string[]; updates: Partial<AdminProduct> }): Promise<BulkOperationResult> {
+    const response = await this.post<BulkOperationResult>("/admin/products", data);
 
     if (response.success) {
-      return response.data!;
+      return response.data as BulkOperationResult;
     } else {
       throw new Error(
         response.error?.message || "Failed to bulk update products.",
@@ -103,12 +91,42 @@ class AdminProductsService extends BasePrivateService {
     }
   }
 
-  // Export products
-  async exportProducts(options: any): Promise<any> {
+  async bulkPublishProducts(productIds: string[], isPublished: boolean): Promise<BulkOperationResult> {
+    const response = await this.post<BulkOperationResult>("/admin/products", {
+      action: "publish",
+      productIds,
+      isPublished
+    });
+
+    if (response.success) {
+      return response.data as BulkOperationResult;
+    } else {
+      throw new Error(
+        response.error?.message || "Failed to bulk publish products.",
+      );
+    }
+  }
+
+  async bulkDeleteProducts(productIds: string[]): Promise<BulkOperationResult> {
+    const response = await this.post<BulkOperationResult>("/admin/products", {
+      action: "delete",
+      productIds
+    });
+
+    if (response.success) {
+      return response.data as BulkOperationResult;
+    } else {
+      throw new Error(
+        response.error?.message || "Failed to bulk delete products.",
+      );
+    }
+  }
+
+  async exportProducts(options: { format?: string; filters?: any }): Promise<Blob> {
     const response = await this.get("/admin/products", { action: "export", ...options });
 
     if (response.success) {
-      return response.data!;
+      return new Blob([JSON.stringify(response.data)], { type: 'application/json' });
     } else {
       throw new Error(
         response.error?.message || "Failed to export products.",
@@ -117,5 +135,4 @@ class AdminProductsService extends BasePrivateService {
   }
 }
 
-// Export singleton instance
 export const adminProductsService = new AdminProductsService();

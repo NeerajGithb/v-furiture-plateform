@@ -1,48 +1,30 @@
 import { BasePrivateService } from "../baseService";
 import { 
   AdminReview,
-  AdminReviewsQuery,
   AdminReviewUpdate,
   AdminReviewBulkUpdate,
-  AdminReviewStats
-} from "@/types/review";
-
-interface ReviewsResponse {
-  reviews: AdminReview[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
-}
+  ReviewStats,
+  AdminReviewsQueryRequest
+} from "@/types/admin/reviews";
+import { PaginationResult } from '@/lib/domain/shared/types';
 
 class AdminReviewsService extends BasePrivateService {
   constructor() {
     super("/api");
   }
 
-  // Get admin reviews with pagination and filters
-  async getReviews(params: AdminReviewsQuery = {}): Promise<ReviewsResponse> {
-    const response = await this.get<ReviewsResponse>("/admin/reviews", params);
-
-    if (response.success) {
-      return response.data!;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch reviews.",
-      );
-    }
+  async getReviews(params: Partial<AdminReviewsQueryRequest> = {}): Promise<PaginationResult<AdminReview>> {
+    return await this.getPaginated<AdminReview>("/admin/reviews", params);
   }
 
-  // Get review statistics
-  async getReviewStats(): Promise<AdminReviewStats> {
-    const response = await this.get<{ stats: AdminReviewStats }>("/admin/reviews", { action: "stats" });
+  async getReviewStats(period?: string): Promise<ReviewStats> {
+    const params: any = { stats: "true" };
+    if (period) params.period = period;
+    
+    const response = await this.get("/admin/reviews", params);
 
     if (response.success) {
-      return response.data!.stats;
+      return response.data as ReviewStats;
     } else {
       throw new Error(
         response.error?.message || "Failed to fetch review statistics.",
@@ -50,25 +32,15 @@ class AdminReviewsService extends BasePrivateService {
     }
   }
 
-  // Get single review by ID
-  async getReviewById(reviewId: string): Promise<AdminReview> {
-    const response = await this.get<{ review: AdminReview }>(`/admin/reviews/${reviewId}`);
-
-    if (response.success) {
-      return response.data!.review;
-    } else {
-      throw new Error(
-        response.error?.message || "Failed to fetch review.",
-      );
-    }
-  }
-
-  // Update review status (approve/reject)
   async updateReviewStatus(reviewId: string, data: AdminReviewUpdate): Promise<AdminReview> {
-    const response = await this.patch<{ review: AdminReview }>(`/admin/reviews/${reviewId}`, data);
+    const response = await this.patch(`/admin/reviews/${reviewId}`, {
+      action: "updateStatus",
+      ...data
+    });
 
     if (response.success) {
-      return response.data!.review;
+      const responseData = response.data as { review: AdminReview };
+      return responseData.review;
     } else {
       throw new Error(
         response.error?.message || "Failed to update review.",
@@ -76,7 +48,6 @@ class AdminReviewsService extends BasePrivateService {
     }
   }
 
-  // Delete review
   async deleteReview(reviewId: string): Promise<void> {
     const response = await this.delete(`/admin/reviews/${reviewId}`);
 
@@ -87,15 +58,14 @@ class AdminReviewsService extends BasePrivateService {
     }
   }
 
-  // Bulk update reviews
   async bulkUpdateReviews(data: AdminReviewBulkUpdate): Promise<{ modifiedCount: number; message: string }> {
-    const response = await this.patch<{ modifiedCount: number; message: string }>("/admin/reviews", {
+    const response = await this.patch("/admin/reviews", {
       action: "bulk",
       ...data,
     });
 
     if (response.success) {
-      return response.data!;
+      return response.data as { modifiedCount: number; message: string };
     } else {
       throw new Error(
         response.error?.message || "Failed to bulk update reviews.",
@@ -103,12 +73,11 @@ class AdminReviewsService extends BasePrivateService {
     }
   }
 
-  // Export reviews
-  async exportReviews(options: any): Promise<any> {
-    const response = await this.get("/admin/reviews", { action: "export", ...options });
+  async exportReviews(options: { format?: string; filters?: any }): Promise<Blob> {
+    const response = await this.post("/admin/reviews", { action: "export", ...options });
 
     if (response.success) {
-      return response.data!;
+      return new Blob([JSON.stringify(response.data)], { type: 'application/json' });
     } else {
       throw new Error(
         response.error?.message || "Failed to export reviews.",
@@ -117,5 +86,4 @@ class AdminReviewsService extends BasePrivateService {
   }
 }
 
-// Export singleton instance
 export const adminReviewsService = new AdminReviewsService();

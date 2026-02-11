@@ -47,9 +47,53 @@ export interface PayoutStats {
   pendingAmount: number;
 }
 
+export interface FinancialSummary {
+  totalRevenue: number;
+  completedRevenue: number;
+  pendingRevenue: number;
+  platformFees: number;
+  completedPayouts: number;
+  pendingPayouts: number;
+  totalPayouts: number;
+  revenueGrowth: number;
+}
+
+export interface FinancialStats {
+  totalOrders: number;
+  completedOrders: number;
+  pendingOrders: number;
+  totalPayments: number;
+}
+
+export interface FinancialBreakdown {
+  paymentMethods: Record<string, number>;
+  orderStatus: Record<string, number>;
+}
+
+export interface FinanceTransaction {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  totalAmount: number;
+  platformFee: number;
+  payout: number;
+  orderStatus: string;
+  paymentStatus: string;
+  createdAt: Date;
+}
+
+export interface FinanceData {
+  summary: FinancialSummary;
+  stats: FinancialStats;
+  breakdown: FinancialBreakdown;
+  transactions: FinanceTransaction[];
+}
+
 export interface IAdminFinanceRepository {
   // Finance overview
   getFinanceOverview(query: FinanceQueryRequest): Promise<FinanceOverview>;
+  getFinanceData(query: FinanceQueryRequest): Promise<FinanceData>;
   getRevenueData(query: FinanceQueryRequest): Promise<RevenueData[]>;
   
   // Payouts

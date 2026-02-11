@@ -19,78 +19,61 @@ export class AdminReviewsService {
   ) {}
 
   async getReviews(query: AdminReviewsQueryRequest): Promise<PaginationResult<AdminReview>> {
-    try {
-      return await this.repository.findMany(query);
-    } catch (error) {
-      throw new ReviewOperationError("getReviews", (error as Error).message);
-    }
+    return await this.repository.findMany(query);
   }
 
   async getReviewById(id: string): Promise<AdminReview> {
-    try {
-      const review = await this.repository.findById(id);
-      if (!review) {
-        throw new ReviewNotFoundError(id);
-      }
-      return review;
-    } catch (error) {
-      if (error instanceof ReviewNotFoundError) {
-        throw error;
-      }
-      throw new ReviewOperationError("getReviewById", (error as Error).message);
+    const review = await this.repository.findById(id);
+    if (!review) {
+      throw new ReviewNotFoundError(id);
     }
+    return review;
   }
 
   async updateReviewStatus(request: ReviewStatusUpdateRequest): Promise<AdminReview> {
-    try {
-      const review = await this.repository.findById(request.reviewId);
-      if (!review) {
-        throw new ReviewNotFoundError(request.reviewId);
-      }
-
-      if (request.status === 'rejected' && !request.reason) {
-        throw new ReviewValidationError("reason", "Rejection reason is required");
-      }
-
-      return await this.repository.updateStatus(request.reviewId, request.status, request.reason);
-    } catch (error) {
-      if (error instanceof ReviewNotFoundError || error instanceof ReviewValidationError) {
-        throw error;
-      }
-      throw new ReviewOperationError("updateReviewStatus", (error as Error).message);
+    const review = await this.repository.findById(request.reviewId);
+    if (!review) {
+      throw new ReviewNotFoundError(request.reviewId);
     }
+
+    if (request.status === 'rejected' && !request.reason) {
+      throw new ReviewValidationError("reason", "Rejection reason is required");
+    }
+
+    return await this.repository.updateStatus(request.reviewId, request.status, request.reason);
   }
 
   async deleteReview(id: string): Promise<void> {
-    try {
-      const review = await this.repository.findById(id);
-      if (!review) {
-        throw new ReviewNotFoundError(id);
-      }
-
-      await this.repository.delete(id);
-    } catch (error) {
-      if (error instanceof ReviewNotFoundError) {
-        throw error;
-      }
-      throw new ReviewOperationError("deleteReview", (error as Error).message);
+    const review = await this.repository.findById(id);
+    if (!review) {
+      throw new ReviewNotFoundError(id);
     }
+
+    await this.repository.delete(id);
   }
 
   async getReviewStats(query: ReviewStatsQueryRequest): Promise<ReviewStats> {
-    try {
-      return await this.repository.getStats(query.period);
-    } catch (error) {
-      throw new ReviewOperationError("getReviewStats", (error as Error).message);
-    }
+    return await this.repository.getStats(query.period);
   }
 
   async exportReviews(request: ReviewExportRequest): Promise<AdminReview[]> {
-    try {
-      return await this.repository.exportReviews(request);
-    } catch (error) {
-      throw new ReviewOperationError("exportReviews", (error as Error).message);
+    return await this.repository.exportReviews(request);
+  }
+
+  async bulkUpdateReviews(request: { reviewIds: string[]; updates: any }): Promise<{ updatedCount: number }> {
+    let updatedCount = 0;
+    for (const reviewId of request.reviewIds) {
+      try {
+        if (request.updates.status) {
+          await this.repository.updateStatus(reviewId, request.updates.status, request.updates.reason);
+          updatedCount++;
+        }
+      } catch (error) {
+        // Continue with other reviews even if one fails
+        console.error(`Failed to update review ${reviewId}:`, error);
+      }
     }
+    return { updatedCount };
   }
 }
 

@@ -1,5 +1,5 @@
 import { ShoppingCart, CheckCircle, Clock, CreditCard } from 'lucide-react';
-import { FinancialStats } from '@/types/finance';
+import { FinancialStats } from '@/types/admin/finance';
 
 interface TransactionStatsProps {
     stats: FinancialStats;

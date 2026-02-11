@@ -1,43 +1,42 @@
 'use client';
 
-import { useState } from 'react';
-import {
-  RefreshCw, Download
-} from 'lucide-react';
 import {
   useAdminReviews,
   useAdminReviewStats,
   useUpdateAdminReviewStatus,
   useDeleteAdminReview,
-  useExportAdminReviews
-} from '@/hooks/admin/useAdminReviews';
-import { AdminReviewStats } from '@/types/review';
+} from '../../../hooks/admin/useAdminReviews';
+import { useReviewUIStore } from '@/stores/admin/reviewStore';
+import { useConfirm } from '@/contexts/ConfirmContext';
+import { LoaderGuard } from '@/components/ui/LoaderGuard';
+import { Pagination } from '@/components/ui/Pagination';
+import PageHeader from '@/components/PageHeader';
 import ReviewsOverview from './components/ReviewsOverview';
 import ReviewsTable from './components/ReviewsTable';
-import ReviewsSkeleton from './components/ReviewsSkeleton';
 
 export default function AdminReviewsPage() {
-  const [selectedReviews, setSelectedReviews] = useState<string[]>([]);
+  const currentPage = useReviewUIStore(s => s.currentPage);
+  const setCurrentPage = useReviewUIStore(s => s.setCurrentPage);
+  const selectedReviews = useReviewUIStore(s => s.selectedReviews);
+  const setSelectedReviews = useReviewUIStore(s => s.setSelectedReviews);
 
-  // React Query hooks
-  const { data: reviewsData, isLoading, refetch } = useAdminReviews();
-  const { data: stats } = useAdminReviewStats();
+  const { data: reviewsData, isPending, error, refetch, isFetching } = useAdminReviews();
+  const { data: stats, isPending: statsPending } = useAdminReviewStats();
   const { mutate: updateReview } = useUpdateAdminReviewStatus();
   const { mutate: deleteReview } = useDeleteAdminReview();
-  const { mutate: exportReviews, isPending: exportPending } = useExportAdminReviews();
+  const { confirm } = useConfirm();
 
-  const allReviews = reviewsData?.reviews || [];
+  const allReviews = reviewsData?.data || [];
 
   const handleSelectReview = (reviewId: string) => {
-    setSelectedReviews(prev => 
-      prev.includes(reviewId) 
-        ? prev.filter(id => id !== reviewId)
-        : [...prev, reviewId]
-    );
+    const newSelection = selectedReviews.includes(reviewId)
+      ? selectedReviews.filter(id => id !== reviewId)
+      : [...selectedReviews, reviewId];
+    setSelectedReviews(newSelection);
   };
 
   const handleSelectAll = (selected: boolean) => {
-    setSelectedReviews(selected ? allReviews.map(r => r._id) : []);
+    setSelectedReviews(selected ? allReviews.map(r => r.id) : []);
   };
 
   const handleUpdateStatus = (reviewId: string, status: string) => {
@@ -45,65 +44,57 @@ export default function AdminReviewsPage() {
   };
 
   const handleDeleteReview = (reviewId: string) => {
-    if (confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
-      deleteReview(reviewId);
-    }
-  };
-
-  const handleExport = () => {
-    exportReviews({});
+    confirm({
+      title: 'Delete Review',
+      message: 'Are you sure you want to delete this review? This action cannot be undone.',
+      type: 'delete',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        deleteReview(reviewId);
+      }
+    });
   };
 
   return (
     <>
-      {isLoading && <ReviewsSkeleton />}
-      {!isLoading && reviewsData && (
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Reviews</h1>
-              <p className="text-sm text-gray-500 mt-1">Moderate and manage customer reviews</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => refetch()}
-                disabled={isLoading}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 text-sm font-medium text-gray-700"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-              <button
-                onClick={handleExport}
-                disabled={exportPending}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 text-sm font-medium text-gray-700"
-              >
-                <Download className="w-4 h-4" />
-                {exportPending ? 'Exporting...' : 'Export'}
-              </button>
-            </div>
-          </div>
+      <PageHeader
+        title="Reviews"
+        description="Moderate and manage customer reviews"
+        onRefresh={refetch}
+        isRefreshing={isFetching}
+      />
 
-          {/* Stats Overview */}
-          {stats && (
-            <ReviewsOverview 
-              stats={stats as AdminReviewStats} 
-              onNavigate={() => {}} 
+      <LoaderGuard 
+        isLoading={isPending} 
+        error={error} 
+        isEmpty={!reviewsData || (reviewsData.pagination?.total || 0) === 0}
+        emptyMessage="No reviews"
+      >
+        {() => (
+          <>
+            <ReviewsOverview
+              stats={stats}
+              isLoading={statsPending}
+              onNavigate={() => { }}
             />
-          )}
 
-          {/* Reviews Table */}
-          <ReviewsTable
-            reviews={allReviews}
-            selectedReviews={selectedReviews}
-            onSelectReview={handleSelectReview}
-            onSelectAll={handleSelectAll}
-            onUpdateStatus={handleUpdateStatus}
-            onDeleteReview={handleDeleteReview}
-          />
-        </div>
-      )}
+            <ReviewsTable
+              reviews={reviewsData!.data}
+              selectedReviews={selectedReviews}
+              onSelectReview={handleSelectReview}
+              onSelectAll={handleSelectAll}
+              onUpdateStatus={handleUpdateStatus}
+              onDeleteReview={handleDeleteReview}
+            />
+
+            <Pagination 
+              pagination={reviewsData!.pagination}
+              onPageChange={setCurrentPage}
+            />
+          </>
+        )}
+      </LoaderGuard>
     </>
   );
 }

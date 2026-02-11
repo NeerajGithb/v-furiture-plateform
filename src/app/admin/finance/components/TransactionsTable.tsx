@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/utils/currency';
-import { FinanceTransaction } from '@/types/finance';
+import { FinanceTransaction } from '@/types/admin/finance';
 
 interface TransactionsTableProps {
     transactions: FinanceTransaction[];
@@ -61,15 +61,8 @@ export default function TransactionsTable({ transactions }: TransactionsTablePro
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {transactions.length === 0 ? (
-                            <tr>
-                                <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">
-                                    No transactions found for the selected period
-                                </td>
-                            </tr>
-                        ) : (
-                            transactions.map((transaction) => (
-                                <tr key={transaction._id} className="hover:bg-gray-50 transition-colors">
+                        {transactions.map((transaction) => (
+                            <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{transaction.orderNumber}</td>
                                     <td className="px-4 py-3 text-sm text-gray-600">
                                         <div className="font-medium text-gray-900">{transaction.customerName}</div>
@@ -88,8 +81,7 @@ export default function TransactionsTable({ transactions }: TransactionsTablePro
                                         {getPaymentBadge(transaction.paymentStatus)}
                                     </td>
                                 </tr>
-                            ))
-                        )}
+                            ))}
                     </tbody>
                 </table>
             </div>

@@ -23,20 +23,20 @@ export class AdminAnalyticsService {
   }
 
   async getCompleteAnalytics(query: AdminAnalyticsQueryRequest) {
-    const [overview, metrics, topPerformers, userAnalytics, salesAnalytics] = await Promise.all([
+    const [overview, topPerformers, userAnalytics, salesAnalytics, realTimeStats] = await Promise.all([
       this.getAnalyticsOverview(query),
-      this.getAnalyticsMetrics(query),
       this.getTopPerformers(query),
       this.getUserAnalytics(query),
-      this.getSalesAnalytics(query)
+      this.getSalesAnalytics(query),
+      this.getRealTimeStats()
     ]);
 
     return {
       overview,
-      metrics,
       topPerformers,
       userAnalytics,
-      salesAnalytics
+      salesAnalytics,
+      realTimeStats
     };
   }
 

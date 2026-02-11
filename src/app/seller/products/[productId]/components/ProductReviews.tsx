@@ -23,7 +23,6 @@ export function ProductReviews({ reviewsData }: ProductReviewsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Review Summary */}
       <div className="bg-gray-50 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Customer Reviews</h3>
@@ -45,7 +44,6 @@ export function ProductReviews({ reviewsData }: ProductReviewsProps) {
           </div>
         </div>
 
-        {/* Rating Distribution */}
         <div className="space-y-2">
           {[5, 4, 3, 2, 1].map((rating) => {
             const count = summary.distribution[rating] || 0;
@@ -71,7 +69,6 @@ export function ProductReviews({ reviewsData }: ProductReviewsProps) {
         </div>
       </div>
 
-      {/* Individual Reviews */}
       <div className="space-y-4">
         {reviews.map((review: any) => (
           <div key={review._id} className="bg-white border border-gray-200 rounded-lg p-6">
@@ -129,7 +126,6 @@ export function ProductReviews({ reviewsData }: ProductReviewsProps) {
         ))}
       </div>
 
-      {/* Load More */}
       {reviewsData.pagination.pages > 1 && (
         <div className="text-center">
           <button className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">

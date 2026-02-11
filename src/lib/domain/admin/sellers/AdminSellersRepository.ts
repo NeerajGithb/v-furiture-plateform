@@ -1,24 +1,19 @@
 import { IAdminSellersRepository, AdminSeller, SellerStats } from "./IAdminSellersRepository";
 import { AdminSellersQueryRequest, SellerStatus } from "./AdminSellersSchemas";
 import { PaginationResult } from "../../shared/types";
-import { RepositoryError } from "../../shared/InfrastructureError";
+import { getStartDateFromPeriod } from "../../shared/dateUtils";
 import Seller from "@/models/Seller";
 import Order from "@/models/Order";
 
 export class AdminSellersRepository implements IAdminSellersRepository {
   async findById(id: string): Promise<AdminSeller | null> {
-    try {
       const seller = await Seller.findById(id).lean();
       return seller ? this.mapToAdminSeller(seller) : null;
-    } catch (error) {
-      throw new RepositoryError("Failed to find seller by ID", "findById", error as Error);
-    }
   }
 
   async findMany(query: AdminSellersQueryRequest): Promise<PaginationResult<AdminSeller>> {
-    try {
       const { 
-        page, limit, search, status, verified, 
+        page, limit, search, status, verified, period,
         startDate, endDate, sortBy, sortOrder 
       } = query;
       
@@ -35,7 +30,10 @@ export class AdminSellersRepository implements IAdminSellersRepository {
       if (status) filter.status = status;
       if (verified !== undefined) filter.verified = verified;
       
-      if (startDate || endDate) {
+      if (period) {
+        const periodStartDate = getStartDateFromPeriod(period);
+        filter.createdAt = { $gte: periodStartDate };
+      } else if (startDate || endDate) {
         filter.createdAt = {};
         if (startDate) filter.createdAt.$gte = new Date(startDate);
         if (endDate) filter.createdAt.$lte = new Date(endDate);
@@ -89,41 +87,20 @@ export class AdminSellersRepository implements IAdminSellersRepository {
           hasPrev: page > 1,
         },
       };
-    } catch (error) {
-      throw new RepositoryError("Failed to find sellers", "findMany", error as Error);
-    }
   }
 
   async getStats(period: string): Promise<SellerStats> {
-    try {
-      const now = new Date();
-      let startDate: Date;
-
-      switch (period) {
-        case "7d":
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case "30d":
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        case "90d":
-          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-          break;
-        case "1y":
-          startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-          break;
-        default:
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      }
+      const dateFilter = period ? getStartDateFromPeriod(period) : null;
+      const dateMatch = dateFilter ? { createdAt: { $gte: dateFilter } } : {};
 
       const [
-        statusStats,
-        verificationStats,
+        allStatusStats,
+        allVerificationStats,
         revenueStats,
         recentSellers
       ] = await Promise.all([
         Seller.aggregate([
-          { $match: { createdAt: { $gte: startDate } } },
+          { $match: dateMatch },
           {
             $group: {
               _id: "$status",
@@ -132,7 +109,7 @@ export class AdminSellersRepository implements IAdminSellersRepository {
           }
         ]),
         Seller.aggregate([
-          { $match: { createdAt: { $gte: startDate } } },
+          { $match: dateMatch },
           {
             $group: {
               _id: null,
@@ -143,6 +120,7 @@ export class AdminSellersRepository implements IAdminSellersRepository {
           }
         ]),
         Order.aggregate([
+          ...(dateFilter ? [{ $match: { createdAt: { $gte: dateFilter } } }] : []),
           {
             $lookup: {
               from: "sellers",
@@ -152,7 +130,6 @@ export class AdminSellersRepository implements IAdminSellersRepository {
             }
           },
           { $unwind: "$seller" },
-          { $match: { "seller.createdAt": { $gte: startDate } } },
           {
             $group: {
               _id: null,
@@ -161,21 +138,21 @@ export class AdminSellersRepository implements IAdminSellersRepository {
             }
           }
         ]),
-        Seller.find({ createdAt: { $gte: startDate } })
+        Seller.find(dateMatch)
           .sort({ createdAt: -1 })
           .limit(10)
           .select("businessName email status createdAt")
           .lean()
       ]);
 
-      const verification = verificationStats[0] || { total: 0, verified: 0, unverified: 0 };
+      const verification = allVerificationStats[0] || { total: 0, verified: 0, unverified: 0 };
       const revenue = revenueStats[0] || { totalRevenue: 0, totalCommission: 0 };
 
       const statusCounts = {
         active: 0, pending: 0, suspended: 0, inactive: 0
       };
 
-      statusStats.forEach((stat: any) => {
+      allStatusStats.forEach((stat: any) => {
         if (stat._id in statusCounts) {
           statusCounts[stat._id as keyof typeof statusCounts] = stat.count;
         }
@@ -205,13 +182,9 @@ export class AdminSellersRepository implements IAdminSellersRepository {
           createdAt: seller.createdAt,
         })),
       };
-    } catch (error) {
-      throw new RepositoryError("Failed to get seller stats", "getStats", error as Error);
-    }
   }
 
   async updateStatus(sellerId: string, status: SellerStatus, reason?: string): Promise<AdminSeller> {
-    try {
       const updateData: any = { status, updatedAt: new Date() };
       if (reason) updateData.statusReason = reason;
 
@@ -226,13 +199,9 @@ export class AdminSellersRepository implements IAdminSellersRepository {
       }
 
       return this.mapToAdminSeller(seller.toObject());
-    } catch (error) {
-      throw new RepositoryError("Failed to update seller status", "updateStatus", error as Error);
-    }
   }
 
   async updateVerification(sellerId: string, verified: boolean): Promise<AdminSeller> {
-    try {
       const seller = await Seller.findByIdAndUpdate(
         sellerId,
         { verified, updatedAt: new Date() },
@@ -244,9 +213,6 @@ export class AdminSellersRepository implements IAdminSellersRepository {
       }
 
       return this.mapToAdminSeller(seller.toObject());
-    } catch (error) {
-      throw new RepositoryError("Failed to update seller verification", "updateVerification", error as Error);
-    }
   }
 
   private mapToAdminSeller(seller: any): AdminSeller {

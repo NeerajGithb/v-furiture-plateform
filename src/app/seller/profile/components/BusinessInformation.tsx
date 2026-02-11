@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Building2, Phone, FileText, Save, User } from 'lucide-react';
-import { SellerProfile, UpdateProfileRequest } from '@/types/sellerProfile';
+import { SellerProfile, UpdateProfileRequest } from '@/types/seller/profile';
 import toast from 'react-hot-toast';
 
 interface BusinessInformationProps {

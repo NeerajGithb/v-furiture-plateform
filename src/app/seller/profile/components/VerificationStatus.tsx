@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle, Clock, Upload, FileText, Shield } from 'lucide-react';
-import { SellerProfile } from '@/types/sellerProfile';
+import { SellerProfile } from '@/types/seller/profile';
 import toast from 'react-hot-toast';
 
 interface VerificationStatusProps {

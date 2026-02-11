@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CreditCard, X, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
-import { EarningsPayoutsProps } from '@/types/sellerEarnings';
+import { EarningsPayoutsProps } from '@/types/seller/earnings';
 
 export default function EarningsPayouts({
   payouts,

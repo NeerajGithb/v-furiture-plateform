@@ -4,9 +4,8 @@ import { withDB } from "@/lib/middleware/dbConnection";
 import { withRouteErrorHandling } from "@/lib/middleware/errorHandler";
 import { sellerInventoryService } from "@/lib/domain/seller/inventory/SellerInventoryService";
 import { 
-  SellerInventoryQuerySchema, 
-  BulkUpdateInventorySchema, 
-  InventoryExportSchema 
+  SellerInventoryQuerySchema,
+  InventoryStatsQuerySchema
 } from "@/lib/domain/seller/inventory/SellerInventorySchemas";
 import { ApiResponseBuilder } from "@/lib/utils/apiResponse";
 import { AuthenticatedSeller } from "@/lib/middleware/auth";
@@ -17,36 +16,26 @@ export const GET = withSellerAuth(
       const { searchParams } = new URL(request.url);
       const queryParams = Object.fromEntries(searchParams.entries());
       
-      const validatedQuery = SellerInventoryQuerySchema.parse(queryParams);
-      
-      // Handle export action
-      if (validatedQuery.action === 'export') {
-        const exportOptions = InventoryExportSchema.parse(queryParams);
-        const exportResult = await sellerInventoryService.exportInventory(seller.id, exportOptions);
-        
-        return ApiResponseBuilder.success(exportResult, {
-          contentType: exportResult.format === 'csv' ? 'text/csv' : 'application/json',
-          filename: exportResult.filename
-        });
+      // Handle stats request
+      if (queryParams.stats === "true") {
+        const validatedQuery = InventoryStatsQuerySchema.parse(queryParams);
+        const stats = await sellerInventoryService.getInventoryStats(seller.id, validatedQuery);
+        return ApiResponseBuilder.success(stats);
       }
       
-      // Handle stats action
-      if (validatedQuery.action === 'stats') {
-        const result = await sellerInventoryService.getInventoryStats(seller.id, {
-          search: validatedQuery.search,
-          status: validatedQuery.status,
-          period: validatedQuery.period,
+      const validatedQuery = SellerInventoryQuerySchema.parse(queryParams);
+      
+      if (validatedQuery.action === 'low_stock_alerts') {
+        const result = await sellerInventoryService.getLowStockAlerts(seller.id, {
+          page: validatedQuery.page,
+          limit: validatedQuery.limit,
         });
-        return ApiResponseBuilder.success({ stats: result });
+        return ApiResponseBuilder.success(result);
       }
       
       const result = await sellerInventoryService.getInventoryData(seller.id, validatedQuery);
       
-      if (result.pagination) {
-        return ApiResponseBuilder.paginated(result.inventory, result.pagination, result.stats);
-      }
-      
-      return ApiResponseBuilder.success(result);
+      return ApiResponseBuilder.paginated(result.inventory, result.pagination);
     })
   )
 );
@@ -54,15 +43,29 @@ export const GET = withSellerAuth(
 export const POST = withSellerAuth(
   withDB(
     withRouteErrorHandling(async (request: NextRequest, seller: AuthenticatedSeller) => {
-      const { searchParams } = new URL(request.url);
-      const action = searchParams.get('action');
+      const body = await request.json();
+      const action = body.action;
       
-      if (action === 'bulk-update') {
-        const body = await request.json();
-        const validatedData = BulkUpdateInventorySchema.parse(body);
-        
-        const result = await sellerInventoryService.bulkUpdateInventory(seller.id, validatedData);
-        return ApiResponseBuilder.success(result, { message: result.message });
+      if (action === 'update_stock') {
+        const { productId, quantity, type, reason } = body;
+        const result = await sellerInventoryService.updateStock(seller.id, productId, {
+          quantity,
+          type,
+          reason
+        });
+        return ApiResponseBuilder.success(result);
+      }
+      
+      if (action === 'set_reorder_level') {
+        const { productId, reorderLevel } = body;
+        const result = await sellerInventoryService.setReorderLevel(seller.id, productId, reorderLevel);
+        return ApiResponseBuilder.success(result);
+      }
+      
+      if (action === 'resolve_alert') {
+        const { alertId } = body;
+        const result = await sellerInventoryService.resolveAlert(seller.id, alertId);
+        return ApiResponseBuilder.success(result);
       }
       
       return ApiResponseBuilder.badRequest("Invalid action");

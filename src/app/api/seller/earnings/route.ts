@@ -46,6 +46,10 @@ export const GET = withSellerAuth(
           hasPrev: (validatedQuery.page || 1) > 1,
         });
       }
+
+      if (validatedQuery.action === 'analytics') {
+        return ApiResponseBuilder.success({ analytics: null });
+      }
       
       const result = await sellerEarningsService.getEarningsData(seller.id, validatedQuery);
       return ApiResponseBuilder.success(result);
@@ -67,7 +71,7 @@ export const POST = withSellerAuth(
         return ApiResponseBuilder.success(result, { message: "Payout request submitted successfully" });
       }
       
-      return ApiResponseBuilder.error("Invalid action", 400);
+      return ApiResponseBuilder.badRequest("Invalid action");
     })
   )
 );

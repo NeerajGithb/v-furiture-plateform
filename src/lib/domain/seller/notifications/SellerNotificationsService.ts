@@ -6,8 +6,25 @@ import {
 import { InvalidNotificationIdsError } from "./SellerNotificationsErrors";
 
 export class SellerNotificationsService {
-  async getNotifications(sellerId: string, query: SellerNotificationsQueryRequest = {}): Promise<{
-    notifications: any[];
+  async getNotifications(sellerId: string, query: SellerNotificationsQueryRequest = {
+    page: 1,
+    limit: 20,
+    period: 'all',
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
+  }): Promise<{
+    notifications: Array<{
+      id: string;
+      type: string;
+      title: string;
+      message: string;
+      link?: string;
+      read: boolean;
+      priority: string;
+      createdAt: Date;
+      readAt?: Date;
+      metadata?: any;
+    }>;
     stats: any;
     pagination: {
       page: number;

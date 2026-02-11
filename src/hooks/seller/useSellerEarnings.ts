@@ -1,80 +1,75 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import { sellerEarningsService } from "@/services/seller/sellerEarningsService";
+import { useGlobalFilterStore } from "@/stores/globalFilterStore";
+import { useEarningsUIStore } from "@/stores/seller/earningsUIStore";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { 
-  EarningsQuery,
   PayoutRequest,
-  EarningsFilters,
-  PayoutFilters,
   EarningsExportData,
   BulkTransactionAction
-} from "@/types/sellerEarnings";
+} from "@/types/seller/earnings";
 
-export const useSellerEarnings = (params: EarningsQuery = {}, enabled: boolean = true) => {
+export const useSellerEarnings = () => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+  const period = useGlobalFilterStore(s => s.period);
+  
   return useQuery({
-    queryKey: ["seller-earnings", params],
-    queryFn: () => sellerEarningsService.getEarningsData(params),
-    enabled: enabled,
+    queryKey: ["seller-earnings", period],
+    queryFn: () => sellerEarningsService.getEarningsData({ period }),
+    enabled: !!seller && !authLoading,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
 };
 
-export const useSellerEarningsSummary = (period?: string, enabled: boolean = true) => {
+export const useSellerEarningsSummary = () => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+  const period = useGlobalFilterStore(s => s.period);
+  
   return useQuery({
     queryKey: ["seller-earnings-summary", period],
     queryFn: () => sellerEarningsService.getEarningsSummary(period),
-    enabled: enabled,
+    enabled: !!seller && !authLoading,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
 };
 
-export const useSellerTransactions = (params: EarningsFilters = {}, enabled: boolean = true) => {
+export const useSellerTransactions = () => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+  const transactionsPage = useEarningsUIStore(s => s.transactionsPage);
+  
   return useQuery({
-    queryKey: ["seller-transactions", params],
-    queryFn: () => sellerEarningsService.getTransactions(params),
-    enabled: enabled,
+    queryKey: ["seller-transactions", { page: transactionsPage, limit: 20 }],
+    queryFn: () => sellerEarningsService.getTransactions({ page: transactionsPage, limit: 20 }),
+    enabled: !!seller && !authLoading,
     staleTime: 1 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
 };
 
-export const useSellerPayouts = (params: PayoutFilters = {}, enabled: boolean = true) => {
+export const useSellerPayouts = () => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+  const payoutsPage = useEarningsUIStore(s => s.payoutsPage);
+  
   return useQuery({
-    queryKey: ["seller-payouts", params],
-    queryFn: () => sellerEarningsService.getPayouts(params),
-    enabled: enabled,
+    queryKey: ["seller-payouts", { page: payoutsPage, limit: 10 }],
+    queryFn: () => sellerEarningsService.getPayouts({ page: payoutsPage, limit: 10 }),
+    enabled: !!seller && !authLoading,
     staleTime: 1 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
 };
 
-export const useSellerEarningsAnalytics = (period?: string, enabled: boolean = true) => {
+export const useSellerEarningsAnalytics = () => {
+  const { seller, isLoading: authLoading } = useAuthGuard();
+  const period = useGlobalFilterStore(s => s.period);
+  
   return useQuery({
     queryKey: ["seller-earnings-analytics", period],
     queryFn: () => sellerEarningsService.getAnalytics(period),
-    enabled: enabled,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-};
-
-export const useSellerTransaction = (transactionId: string, enabled: boolean = true) => {
-  return useQuery({
-    queryKey: ["seller-transaction", transactionId],
-    queryFn: () => sellerEarningsService.getTransactionById(transactionId),
-    enabled: enabled && !!transactionId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-};
-
-export const useSellerPayout = (payoutId: string, enabled: boolean = true) => {
-  return useQuery({
-    queryKey: ["seller-payout", payoutId],
-    queryFn: () => sellerEarningsService.getPayoutById(payoutId),
-    enabled: enabled && !!payoutId,
+    enabled: !!seller && !authLoading,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
@@ -115,8 +110,13 @@ export const useCancelPayout = () => {
 };
 
 export const useExportEarnings = () => {
+  const period = useGlobalFilterStore(s => s.period);
+  
   return useMutation({
-    mutationFn: (options: EarningsExportData) => sellerEarningsService.exportEarnings(options),
+    mutationFn: (options: EarningsExportData) => sellerEarningsService.exportEarnings({
+      ...options,
+      period: options.period || period
+    }),
     onSuccess: () => {
       toast.success("Earnings data exported successfully");
     },

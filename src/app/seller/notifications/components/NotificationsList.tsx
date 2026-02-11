@@ -13,8 +13,8 @@ import {
   TrendingUp,
   ExternalLink
 } from 'lucide-react';
-import { SellerNotification } from '@/types/sellerNotifications';
-import { TYPE_BADGE_CONFIG, PRIORITY_BADGE_CONFIG } from '@/types/sellerNotifications';
+import { SellerNotification } from '@/types/seller/notifications';
+import { TYPE_BADGE_CONFIG, PRIORITY_BADGE_CONFIG } from '@/types/seller/notifications';
 
 interface NotificationsListProps {
   notifications: SellerNotification[];

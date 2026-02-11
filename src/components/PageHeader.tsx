@@ -1,37 +1,43 @@
 'use client';
 
-import { Download } from 'lucide-react';
+import { ReactNode } from 'react';
+import { RefreshCw } from 'lucide-react';
 
 interface PageHeaderProps {
     title: string;
-    onExport?: () => void;
-    isExporting?: boolean;
-    showExport?: boolean;
+    description?: string;
+    actions?: ReactNode;
+    onRefresh?: () => void;
+    isRefreshing?: boolean;
 }
 
 export default function PageHeader({
     title,
-    onExport,
-    isExporting = false,
-    showExport = false
+    description,
+    actions,
+    onRefresh,
+    isRefreshing = false
 }: PageHeaderProps) {
     return (
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-            <div className="flex items-center justify-between">
-                {/* Page Title */}
-                <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
-
-                {/* Export Button */}
-                {showExport && onExport && (
+        <div className="flex items-center justify-between">
+            <div>
+                <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+                {description && (
+                    <p className="text-sm text-gray-500 mt-1">{description}</p>
+                )}
+            </div>
+            <div className="flex items-center gap-3">
+                {onRefresh && (
                     <button
-                        onClick={onExport}
-                        disabled={isExporting}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        onClick={onRefresh}
+                        disabled={isRefreshing}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 text-sm font-medium text-gray-700"
                     >
-                        <Download className="w-4 h-4" />
-                        {isExporting ? 'Exporting...' : 'Export'}
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh
                     </button>
                 )}
+                {actions}
             </div>
         </div>
     );

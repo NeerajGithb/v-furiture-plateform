@@ -1,70 +1,123 @@
 'use client';
 
+import { TrendingUp, Users, Box, Store, Package, CreditCard, Star } from 'lucide-react';
 import { useAdminDashboard } from '@/hooks/admin/useAdminDashboard';
-import { useDashboardUIStore } from '@/stores/admin/dashboardStore';
 import { LoaderGuard } from '@/components/ui/LoaderGuard';
-import MainStatsCards from './components/MainStatsCards';
-import SecondaryStats from './components/SecondaryStats';
-import TopProducts from './components/TopProducts';
-import SearchAndPayment from './components/SearchAndPayment';
-import InventoryAndEngagement from './components/InventoryAndEngagement';
-import RecentActivity from './components/RecentActivity';
-import OrderStatusBreakdown from './components/OrderStatusBreakdown';
+import { EmptyStateGuard } from '@/components/ui/EmptyStateGuard';
+import { EmptyState } from '@/components/ui/EmptyState';
+import PageHeader from '@/components/PageHeader';
+import { formatCurrency } from '@/utils/currency';
+import OverviewStats from './components/OverviewStats';
+import SalesMetricsCard from './components/SalesMetricsCard';
+import UserMetricsCard from './components/UserMetricsCard';
+import ProductMetricsCard from './components/ProductMetricsCard';
+import SellerMetricsCard from './components/SellerMetricsCard';
+import OrderMetricsCard from './components/OrderMetricsCard';
+import PaymentMetricsCard from './components/PaymentMetricsCard';
+import ReviewMetricsCard from './components/ReviewMetricsCard';
+import MetricItem from './components/MetricItem';
 
 export default function AdminDashboardPage() {
-  const selectedTab = useDashboardUIStore(s => s.selectedTab);
-  
-  const { data, isLoading, error } = useAdminDashboard({
-    period: selectedTab === 'overview' ? '30d' : selectedTab
-  });
+  const { data, isPending, error, refetch, isFetching } = useAdminDashboard();
 
   return (
-    <LoaderGuard isLoading={isLoading} error={error}>
-      {data && (
-        <>
-          <MainStatsCards
-            revenue={data.revenue}
-            orders={data.orders}
-            users={data.users}
-            products={data.products}
-            growth={data.growth}
-          />
+    <>
+      <PageHeader
+        title="Dashboard"
+        description="Overview of your platform metrics"
+        onRefresh={refetch}
+        isRefreshing={isFetching}
+      />
+      
+      <LoaderGuard isLoading={isPending} error={error} isEmpty={!data}>
+        {() => {
+          const metrics = [
+            {
+              total: data!.sales.todayRevenue + data!.sales.weekRevenue + data!.sales.monthRevenue + data!.sales.yearRevenue,
+              title: 'Sales',
+              icon: TrendingUp,
+              node: <SalesMetricsCard sales={data!.sales} />
+            },
+            {
+              total: data!.users.totalUsers,
+              title: 'Users',
+              icon: Users,
+              node: <UserMetricsCard users={data!.users} />
+            },
+            {
+              total: data!.products.totalProducts,
+              title: 'Products',
+              icon: Box,
+              node: <ProductMetricsCard products={data!.products} />
+            },
+            {
+              total: data!.sellers.totalSellers,
+              title: 'Sellers',
+              icon: Store,
+              node: <SellerMetricsCard sellers={data!.sellers} />
+            },
+            {
+              total: data!.orders.totalOrders,
+              title: 'Orders',
+              icon: Package,
+              node: <OrderMetricsCard orders={data!.orders} />
+            },
+            {
+              total: data!.payments.totalPayments,
+              title: 'Payments',
+              icon: CreditCard,
+              node: <PaymentMetricsCard payments={data!.payments} />
+            },
+            {
+              total: data!.reviews.totalReviews,
+              title: 'Reviews',
+              icon: Star,
+              node: <ReviewMetricsCard reviews={data!.reviews} />
+            }
+          ];
 
-          <SecondaryStats
-            users={data.users}
-            engagement={data.engagement}
-            search={data.search}
-            reviews={data.reviews}
-          />
+          return (
+            <>
+              <EmptyStateGuard
+                total={(data!.overview.totalRevenue || 0) + (data!.overview.totalOrders || 0) + (data!.overview.totalUsers || 0)}
+                empty={<EmptyState icon={TrendingUp} title="No overview data" />}
+              >
+                <OverviewStats overview={data!.overview} />
+              </EmptyStateGuard>
+              
+              {metrics.map((metric) => (
+                <EmptyStateGuard
+                  key={metric.title}
+                  total={metric.total}
+                  empty={<EmptyState icon={metric.icon} title={`No ${metric.title.toLowerCase()}`} />}
+                >
+                  {metric.node}
+                </EmptyStateGuard>
+              ))}
 
-          <TopProducts
-            mostViewed={data.topProducts.mostViewed}
-            bestSellers={data.topProducts.bestSellers}
-            mostWishlisted={data.topProducts.mostWishlisted}
-          />
-
-          <SearchAndPayment
-            search={data.search}
-            paymentMethods={data.paymentMethods}
-          />
-
-          <InventoryAndEngagement
-            products={data.products}
-            users={data.users}
-            engagement={data.engagement}
-          />
-
-          <RecentActivity
-            users={data.recentActivity.users}
-            sellers={data.recentActivity.sellers}
-            orders={data.recentActivity.orders}
-          />
-
-          <OrderStatusBreakdown 
-            orders={data.orders} 
-          />
-        </>
-      )}
-    </LoaderGuard>
+              {data!.realTime && (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h2 className="text-lg font-semibold mb-4">Real-time Metrics</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <MetricItem label="Active Users" value={data!.realTime.activeUsers.toLocaleString('en-IN')} />
+                    <MetricItem label="Ongoing Orders" value={data!.realTime.ongoingOrders.toLocaleString('en-IN')} />
+                    <MetricItem label="Today Revenue" value={formatCurrency(data!.realTime.todayRevenue)} />
+                    <MetricItem 
+                      label="System Health" 
+                      value={data!.realTime.systemHealth}
+                      className={
+                        data!.realTime.systemHealth === 'healthy' ? 'text-green-600' :
+                        data!.realTime.systemHealth === 'warning' ? 'text-yellow-600' :
+                        'text-red-600'
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        }}
+      </LoaderGuard>
+    </>
   );
 }

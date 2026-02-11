@@ -1,13 +1,12 @@
 import { create } from 'zustand';
-import { SellerOrderUIState } from '@/types/sellerOrder';
+import { SellerOrderUIState } from '@/types/seller/orders';
 
 export const useSellerOrderUIStore = create<SellerOrderUIState>((set, get) => ({
-  // Initial state
   selectedOrders: [],
   showFilters: false,
   expandedOrder: null,
+  currentPage: 1,
   
-  // Selection actions
   toggleOrderSelection: (orderId: string) => {
     set((state) => ({
       selectedOrders: state.selectedOrders.includes(orderId)
@@ -24,7 +23,6 @@ export const useSellerOrderUIStore = create<SellerOrderUIState>((set, get) => ({
     set({ selectedOrders: [] });
   },
   
-  // UI actions
   setShowFilters: (show: boolean) => {
     set({ showFilters: show });
   },
@@ -32,13 +30,17 @@ export const useSellerOrderUIStore = create<SellerOrderUIState>((set, get) => ({
   setExpandedOrder: (orderId: string | null) => {
     set({ expandedOrder: orderId });
   },
+
+  setCurrentPage: (page: number) => {
+    set({ currentPage: page });
+  },
   
-  // Reset all state
   resetState: () => {
     set({
       selectedOrders: [],
       showFilters: false,
-      expandedOrder: null
+      expandedOrder: null,
+      currentPage: 1
     });
   }
 }));

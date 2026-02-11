@@ -5,7 +5,7 @@ import {
     ChevronDown, ChevronUp, MoreHorizontal,
     TrendingUp, Package, Shield, ShieldCheck, MapPin
 } from 'lucide-react';
-import { AdminSeller } from '@/types/seller';
+import { AdminSeller } from '@/types/admin/sellers';
 import { formatCurrency } from '@/utils/currency';
 import { useRouter } from 'next/navigation';
 
@@ -55,18 +55,6 @@ export default function SellersTable({
         );
     };
 
-    if (sellers.length === 0) {
-        return (
-            <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Store className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">No sellers found</h3>
-                <p className="text-sm text-gray-500">Try adjusting your filters or search terms</p>
-            </div>
-        );
-    }
-
     return (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -84,8 +72,8 @@ export default function SellersTable({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {sellers.map((seller) => (
-                            <React.Fragment key={seller._id}>
-                                <tr className={`hover:bg-gray-50/80 transition-colors ${expandedSeller === seller._id ? 'bg-gray-50/50' : ''}`}>
+                            <React.Fragment key={seller.id}>
+                                <tr className={`hover:bg-gray-50/80 transition-colors ${expandedSeller === seller.id ? 'bg-gray-50/50' : ''}`}>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm">
@@ -123,7 +111,7 @@ export default function SellersTable({
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                onUpdateVerified(seller._id, !seller.verified);
+                                                onUpdateVerified(seller.id, !seller.verified);
                                             }}
                                             className={`group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${seller.verified
                                                     ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 ring-1 ring-blue-600/20'
@@ -150,7 +138,7 @@ export default function SellersTable({
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            onUpdateStatus(seller._id, 'active');
+                                                            onUpdateStatus(seller.id, 'active');
                                                         }}
                                                         className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors"
                                                         title="Approve"
@@ -160,7 +148,7 @@ export default function SellersTable({
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            onUpdateStatus(seller._id, 'suspended');
+                                                            onUpdateStatus(seller.id, 'suspended');
                                                         }}
                                                         className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                                                         title="Reject"
@@ -173,7 +161,7 @@ export default function SellersTable({
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        onUpdateStatus(seller._id, 'suspended');
+                                                        onUpdateStatus(seller.id, 'suspended');
                                                     }}
                                                     className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 rounded-md transition-colors"
                                                 >
@@ -184,7 +172,7 @@ export default function SellersTable({
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        onUpdateStatus(seller._id, 'active');
+                                                        onUpdateStatus(seller.id, 'active');
                                                     }}
                                                     className="px-3 py-1.5 text-xs font-medium text-green-600 hover:bg-green-50 border border-green-200 rounded-md transition-colors"
                                                 >
@@ -196,13 +184,13 @@ export default function SellersTable({
 
                                     <td className="px-6 py-4 text-right">
                                         <button
-                                            onClick={() => onToggleExpand(seller._id)}
-                                            className={`p-1.5 rounded-md transition-colors ${expandedSeller === seller._id
+                                            onClick={() => onToggleExpand(seller.id)}
+                                            className={`p-1.5 rounded-md transition-colors ${expandedSeller === seller.id
                                                     ? 'bg-gray-100 text-gray-900'
                                                     : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
                                                 }`}
                                         >
-                                            {expandedSeller === seller._id ? (
+                                            {expandedSeller === seller.id ? (
                                                 <ChevronUp className="w-4 h-4" />
                                             ) : (
                                                 <ChevronDown className="w-4 h-4" />
@@ -212,7 +200,7 @@ export default function SellersTable({
                                 </tr>
 
                                 {/* Expanded Detail Cards */}
-                                {expandedSeller === seller._id && (
+                                {expandedSeller === seller.id && (
                                     <tr>
                                         <td colSpan={7} className="px-0 py-0">
                                             <div className="bg-gray-50/50 border-t border-b border-gray-100 p-6 animate-in slide-in-from-top-2 duration-200">
@@ -280,7 +268,7 @@ export default function SellersTable({
                                                         </h4>
                                                         <div className="space-y-3">
                                                             <button
-                                                                onClick={() => router.push(`/admin/products?seller=${seller._id}`)}
+                                                                onClick={() => router.push(`/admin/products?seller=${seller.id}`)}
                                                                 className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all group/btn"
                                                             >
                                                                 <div className="flex items-center gap-3">

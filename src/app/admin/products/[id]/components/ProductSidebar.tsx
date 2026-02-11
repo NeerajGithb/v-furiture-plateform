@@ -1,23 +1,24 @@
 import { Eye, Heart, ShoppingCart, Image as ImageIcon } from 'lucide-react';
-import { AdminProduct } from '@/types/adminProduct';
+import type { AdminProduct } from '@/types/admin/products';
 
 interface ProductSidebarProps {
-  product: AdminProduct;
+  product?: AdminProduct;
 }
 
 export default function ProductSidebar({ product }: ProductSidebarProps) {
+  if (!product) return null;
+
   return (
     <div className="space-y-6">
-      {/* Main Image */}
       <div className="bg-white rounded-lg shadow p-4">
         <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
           <ImageIcon className="w-4 h-4" />
           Product Images
         </h3>
-        {product.mainImage?.url ? (
+        {product.images?.[0] ? (
           <img
-            src={product.mainImage.url}
-            alt={product.mainImage.alt || product.name}
+            src={product.images[0]}
+            alt={product.name}
             className="w-full h-64 object-cover rounded border"
           />
         ) : (
@@ -25,13 +26,13 @@ export default function ProductSidebar({ product }: ProductSidebarProps) {
             <ImageIcon className="w-12 h-12 text-gray-400" />
           </div>
         )}
-        {product.galleryImages && product.galleryImages.length > 0 && (
+        {product.images && product.images.length > 1 && (
           <div className="grid grid-cols-3 gap-2 mt-3">
-            {product.galleryImages.slice(0, 6).map((img, idx) => (
+            {product.images.slice(1, 7).map((img, idx) => (
               <img
                 key={idx}
-                src={img.url}
-                alt={img.alt || `Gallery ${idx + 1}`}
+                src={img}
+                alt={`Gallery ${idx + 1}`}
                 className="w-full h-20 object-cover rounded border"
               />
             ))}
@@ -39,7 +40,6 @@ export default function ProductSidebar({ product }: ProductSidebarProps) {
         )}
       </div>
 
-      {/* Analytics */}
       <div className="bg-white rounded-lg shadow p-4">
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Analytics</h3>
         <div className="space-y-2">
