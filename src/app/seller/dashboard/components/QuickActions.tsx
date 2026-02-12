@@ -9,8 +9,8 @@ export function QuickActions() {
   ];
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-5">
-      <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
+    <div className="bg-white border border-slate-200 rounded-lg p-6">
+      <h3 className="text-sm font-semibold text-slate-900 mb-5 uppercase tracking-wide">
         Quick Actions
       </h3>
       <div className="grid grid-cols-2 gap-3">
@@ -18,10 +18,10 @@ export function QuickActions() {
           <a
             key={action.label}
             href={action.href}
-            className="flex flex-col items-center justify-center p-3 text-center border border-gray-200 rounded-md hover:border-gray-300 hover:bg-gray-50 transition-all group"
+            className="flex flex-col items-center justify-center p-4 text-center border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm transition-all group"
           >
-            <action.icon className="w-5 h-5 text-gray-400 group-hover:text-gray-900 mb-2 transition-colors" />
-            <span className="text-xs font-medium text-gray-600 group-hover:text-gray-900">
+            <action.icon className="w-6 h-6 text-slate-400 group-hover:text-slate-900 mb-2 transition-colors" />
+            <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">
               {action.label}
             </span>
           </a>

@@ -27,7 +27,7 @@ export default function LoginForm({
   // Determine which hook to use based on userType
   const sellerLoginMutation = useSellerLogin();
   const adminLoginMutation = useAdminLogin();
-  
+
   const loginMutation = userType === 'admin' ? adminLoginMutation : sellerLoginMutation;
   const { mutate: login, isPending: loading, error } = loginMutation;
 
@@ -38,18 +38,18 @@ export default function LoginForm({
 
   return (
     <div className="w-full max-w-sm mx-auto">
-      <div className="bg-white p-8 border border-gray-200 rounded-lg shadow-sm">
+      <div className="bg-white p-8 border border-slate-200 rounded-lg shadow-lg">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 mb-4 [&>svg]:w-5 [&>svg]:h-5 [&>svg]:text-gray-900">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-lg bg-slate-900 mb-4 [&>svg]:w-6 [&>svg]:h-6 [&>svg]:text-white">
             {icon}
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-          <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
+          <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
+          <p className="mt-2 text-sm text-slate-600">{subtitle}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
               Email Address
             </label>
             <div className="relative">
@@ -58,7 +58,7 @@ export default function LoginForm({
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 sm:text-sm"
+                className="block w-full px-4 py-3 text-sm border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-all"
                 placeholder="name@company.com"
                 required
                 autoComplete="email"
@@ -67,7 +67,7 @@ export default function LoginForm({
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2">
               Password
             </label>
             <div className="relative">
@@ -76,7 +76,7 @@ export default function LoginForm({
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 sm:text-sm"
+                className="block w-full px-4 py-3 text-sm border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-all"
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
@@ -84,9 +84,9 @@ export default function LoginForm({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -95,22 +95,22 @@ export default function LoginForm({
             <button
               type="button"
               onClick={() => setShowForgotPassword(true)}
-              className="text-sm text-gray-500 hover:text-gray-900 hover:underline transition-colors focus:outline-none"
+              className="text-sm text-slate-600 hover:text-slate-900 hover:underline transition-colors focus:outline-none font-medium"
             >
               Forgot password?
             </button>
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error.message}</p>
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg">
+              <p className="text-sm text-rose-600">{error.message}</p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors ${loading ? 'opacity-75 cursor-not-allowed' : ''
+            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-all ${loading ? 'opacity-75 cursor-not-allowed' : ''
               }`}
           >
             {loading ? 'Signing in...' : 'Sign in'}
@@ -121,7 +121,7 @@ export default function LoginForm({
           <button
             type="button"
             onClick={() => router.push('/')}
-            className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+            className="text-sm text-slate-600 hover:text-slate-900 transition-colors font-medium"
           >
             &larr; Back to Home
           </button>

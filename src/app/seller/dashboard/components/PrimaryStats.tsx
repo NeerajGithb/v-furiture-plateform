@@ -10,7 +10,7 @@ export function PrimaryStats({ data }: PrimaryStatsProps) {
   const getGrowthColor = (value: number) => {
     if (value > 0) return 'text-emerald-700 bg-emerald-50';
     if (value < 0) return 'text-rose-700 bg-rose-50';
-    return 'text-gray-600 bg-gray-100';
+    return 'text-slate-600 bg-slate-50';
   };
 
   const stats = [
@@ -49,28 +49,28 @@ export function PrimaryStats({ data }: PrimaryStatsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="bg-white rounded-lg border border-gray-200 p-5 hover:border-gray-300 transition-colors"
+          className="bg-white border border-slate-200 rounded-lg p-6 hover:border-slate-300 hover:shadow-md transition-all duration-200"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-500">{stat.label}</h3>
-            <stat.icon className="w-4 h-4 text-gray-400" />
+            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">{stat.label}</h3>
+            <stat.icon className="w-5 h-5 text-slate-400" />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-2">
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
+              <span className="text-3xl font-bold text-slate-900">{stat.value}</span>
               {stat.growth !== 0 && (
-                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getGrowthColor(stat.growth)}`}>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${getGrowthColor(stat.growth)}`}>
                   {stat.growth > 0 ? '+' : ''}{stat.growth.toFixed(1)}%
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              <span className="font-medium text-gray-900">{stat.subValue}</span> {stat.subLabel}
+            <p className="text-sm text-slate-600">
+              <span className="font-semibold text-slate-900">{stat.subValue}</span> {stat.subLabel}
             </p>
           </div>
         </div>

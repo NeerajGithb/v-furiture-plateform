@@ -74,7 +74,7 @@ export const POST = withSellerAuth(
           return ApiResponseBuilder.success(result);
         }
 
-        const { _confirmed, ...cleanBody } = body;
+        const { _confirmed, action, ...cleanBody } = body;
         const validatedData = CreateProductSchema.parse(cleanBody);
 
         const result = await sellerProductsService.createProduct(

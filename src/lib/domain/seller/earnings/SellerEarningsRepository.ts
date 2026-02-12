@@ -31,6 +31,7 @@ export class SellerEarningsRepository {
     const paidOrders = await Order.find({
       'items.productId': { $in: sellerProducts },
       paymentStatus: 'paid',
+      orderStatus: 'delivered',
       ...dateFilter
     }).select('totalAmount orderStatus createdAt deliveredAt').lean();
 
@@ -72,6 +73,7 @@ export class SellerEarningsRepository {
     const previousPaidOrders = await Order.find({
       'items.productId': { $in: sellerProducts },
       paymentStatus: 'paid',
+      orderStatus: 'delivered',
       createdAt: { 
         $gte: previousStartDate,
         $lt: startDate
@@ -319,6 +321,7 @@ export class SellerEarningsRepository {
     const orders = await Order.find({
       'items.productId': { $in: productIds },
       paymentStatus: 'paid',
+      orderStatus: 'delivered',
       ...dateFilter
     })
       .populate('userId', 'name email')

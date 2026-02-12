@@ -1,62 +1,123 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
-import { Shield, Store } from 'lucide-react';
+import { NavLink } from '@/components/NavigationLoader';
+import { Shield, Store, ArrowRight } from 'lucide-react';
 
-export default function HomePage() {
+/**
+ * HomePage Component
+ * Professional portal selection with enterprise design
+ */
+export default function HomePage(): React.ReactElement {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">VFurniture Platform</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center px-6 py-16">
+      <div className="w-full max-w-5xl">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">
+            V-Furniture Platform
+          </h1>
+          <p className="text-base text-slate-600">
+            Select your portal to access the platform
+          </p>
         </div>
 
+        {/* Portal Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Admin Section */}
-          <div className="bg-white rounded-lg border border-gray-200 p-8 hover:shadow-lg transition-shadow">
-            <div className="flex flex-col items-center text-center space-y-6">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <Shield className="w-8 h-8 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Admin</h2>
-              </div>
-              <Link
-                href="/login/admin"
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Admin Login
-              </Link>
-            </div>
-          </div>
+          {/* Admin Portal */}
+          <PortalCard
+            icon={Shield}
+            title="Admin Portal"
+            description="Platform administration and management"
+            primaryAction={{
+              label: 'Access Admin Portal',
+              href: '/login/admin'
+            }}
+          />
 
-          {/* Seller Section */}
-          <div className="bg-white rounded-lg border border-gray-200 p-8 hover:shadow-lg transition-shadow">
-            <div className="flex flex-col items-center text-center space-y-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <Store className="w-8 h-8 text-green-600" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Seller</h2>
-              </div>
-              <div className="w-full space-y-3">
-                <Link
-                  href="/login/seller"
-                  className="block w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                >
-                  Seller Login
-                </Link>
-                <Link
-                  href="/signup/seller"
-                  className="block w-full px-6 py-3 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-colors font-medium"
-                >
-                  Register as Seller
-                </Link>
-              </div>
-            </div>
-          </div>
+          {/* Seller Portal */}
+          <PortalCard
+            icon={Store}
+            title="Seller Portal"
+            description="Manage your products, orders, and storefront"
+            primaryAction={{
+              label: 'Sign In',
+              href: '/login/seller'
+            }}
+            secondaryAction={{
+              label: 'Create Seller Account',
+              href: '/signup/seller'
+            }}
+          />
         </div>
+
+        {/* Footer */}
+        <div className="mt-12 text-center">
+          <p className="text-sm text-slate-500">
+            Secure authentication • Enterprise-grade infrastructure
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface PortalCardProps {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  primaryAction: {
+    label: string;
+    href: string;
+  };
+  secondaryAction?: {
+    label: string;
+    href: string;
+  };
+}
+
+function PortalCard({
+  icon: Icon,
+  title,
+  description,
+  primaryAction,
+  secondaryAction,
+}: PortalCardProps): React.ReactElement {
+  return (
+    <div className="bg-white border border-slate-200/80 rounded-lg p-8 hover:shadow-lg hover:border-slate-300 transition-all duration-200">
+      {/* Icon & Content */}
+      <div className="flex items-start gap-5 mb-8">
+        <div className="w-14 h-14 bg-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Icon className="w-7 h-7 text-white" />
+        </div>
+        <div className="flex-1">
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">
+            {title}
+          </h2>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            {description}
+          </p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="space-y-3">
+        <NavLink
+          href={primaryAction.href}
+          className="flex items-center justify-center gap-2 w-full px-5 py-3 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-colors"
+        >
+          {primaryAction.label}
+          <ArrowRight className="w-4 h-4" />
+        </NavLink>
+
+        {secondaryAction && (
+          <NavLink
+            href={secondaryAction.href}
+            className="flex items-center justify-center w-full px-5 py-3 border-2 border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all"
+          >
+            {secondaryAction.label}
+          </NavLink>
+        )}
       </div>
     </div>
   );

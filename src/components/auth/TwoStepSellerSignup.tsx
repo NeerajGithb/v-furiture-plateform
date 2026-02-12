@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@/components/NavigationLoader';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Building2, 
-  ArrowRight, 
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Building2,
+  ArrowRight,
   ArrowLeft,
   CheckCircle,
   Shield,
@@ -17,11 +17,11 @@ import {
   UserCheck,
   FileText
 } from 'lucide-react';
-import { 
-  useSellerSignupStep1, 
-  useVerifySignupOtp, 
-  useSellerSignupStep2, 
-  useResendSignupOtp 
+import {
+  useSellerSignupStep1,
+  useVerifySignupOtp,
+  useSellerSignupStep2,
+  useResendSignupOtp
 } from '@/hooks/useAuth';
 
 interface Step1Data {
@@ -42,7 +42,7 @@ interface Step2Data {
 type SignupStep = 'email' | 'otp' | 'business' | 'success';
 
 export default function TwoStepSellerSignup() {
-  const router = useRouter();
+  const router = useNavigate();
   const [currentStep, setCurrentStep] = useState<SignupStep>('email');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -70,8 +70,8 @@ export default function TwoStepSellerSignup() {
   const signupStep2 = useSellerSignupStep2();
   const resendOtp = useResendSignupOtp();
 
-  const isLoading = signupStep1.isPending || verifyOtp.isPending || 
-                   signupStep2.isPending || resendOtp.isPending;
+  const isLoading = signupStep1.isPending || verifyOtp.isPending ||
+    signupStep2.isPending || resendOtp.isPending;
   const error = signupStep1.error || verifyOtp.error || signupStep2.error || resendOtp.error;
 
   // Step 1: Email and Password
@@ -135,7 +135,7 @@ export default function TwoStepSellerSignup() {
   // Resend OTP
   const handleResendOtp = () => {
     if (resendCooldown > 0) return;
-    
+
     setOtpCode('');
     resendOtp.mutate({ email: step1Data.email }, {
       onSuccess: () => {
@@ -165,18 +165,18 @@ export default function TwoStepSellerSignup() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
       {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
+          <div className="bg-white rounded-lg shadow-lg p-8 border border-slate-200">
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-slate-900 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Store className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">Join as Seller</h1>
-              <p className="text-gray-600 mt-1">Start selling on VFurniture</p>
+              <h1 className="text-2xl font-bold text-slate-900">Join as Seller</h1>
+              <p className="text-sm text-slate-600 mt-2">Start selling on VFurniture</p>
             </div>
 
             <AnimatePresence mode="wait">
@@ -191,14 +191,14 @@ export default function TwoStepSellerSignup() {
                 >
                   <form onSubmit={handleStep1Submit} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <input
                           type="email"
                           value={step1Data.email}
                           onChange={(e) => setStep1Data({ ...step1Data, email: e.target.value })}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          className="w-full pl-10 pr-4 py-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-all"
                           placeholder="your@email.com"
                           required
                         />
@@ -252,9 +252,9 @@ export default function TwoStepSellerSignup() {
                     {(error || (step1Data.password.length > 0 && step1Data.password.length < 6) || (step1Data.confirmPassword.length > 0 && step1Data.password !== step1Data.confirmPassword)) && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-sm text-red-600">
-                          {(error ? String(error.message || error) : '') || 
-                           (step1Data.password.length > 0 && step1Data.password.length < 6 && 'Password must be at least 6 characters') ||
-                           (step1Data.confirmPassword.length > 0 && step1Data.password !== step1Data.confirmPassword && 'Passwords do not match')}
+                          {(error ? String(error.message || error) : '') ||
+                            (step1Data.password.length > 0 && step1Data.password.length < 6 && 'Password must be at least 6 characters') ||
+                            (step1Data.confirmPassword.length > 0 && step1Data.password !== step1Data.confirmPassword && 'Passwords do not match')}
                         </p>
                       </div>
                     )}
@@ -262,7 +262,7 @@ export default function TwoStepSellerSignup() {
                     <button
                       type="submit"
                       disabled={isLoading || step1Data.password.length < 6 || step1Data.password !== step1Data.confirmPassword}
-                      className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {isLoading ? 'Sending Code...' : (
                         <>
@@ -350,7 +350,7 @@ export default function TwoStepSellerSignup() {
                       <button
                         type="submit"
                         disabled={isLoading || otpCode.length !== 6}
-                        className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         {isLoading ? 'Verifying...' : (
                           <>
@@ -498,7 +498,7 @@ export default function TwoStepSellerSignup() {
                       <button
                         type="submit"
                         disabled={isLoading}
-                        className="flex-2 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 text-sm"
+                        className="flex-2 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50"
                       >
                         {isLoading ? 'Creating Account...' : 'Complete Registration'}
                       </button>
@@ -571,12 +571,12 @@ export default function TwoStepSellerSignup() {
       </div>
 
       {/* Right Side - Information Panel */}
-      <div className="w-96 bg-gradient-to-br from-green-600 to-emerald-700 p-8 flex flex-col justify-center text-white">
+      <div className="w-96 bg-slate-900 p-8 flex flex-col justify-center text-white">
         <div className="space-y-8">
           {/* Header */}
           <div>
             <h2 className="text-3xl font-bold mb-2">Start Selling Today</h2>
-            <p className="text-green-100">Join thousands of sellers on VFurniture</p>
+            <p className="text-slate-300">Join thousands of sellers on VFurniture</p>
           </div>
 
           {/* Steps Progress */}
@@ -587,16 +587,15 @@ export default function TwoStepSellerSignup() {
                 const Icon = step.icon;
                 const isActive = step.id === currentStep;
                 const isCompleted = step.completed;
-                
+
                 return (
                   <div key={step.id} className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                      isCompleted 
-                        ? 'bg-white text-green-600' 
-                        : isActive 
-                          ? 'bg-green-500 text-white' 
-                          : 'bg-green-800 text-green-300'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isCompleted
+                      ? 'bg-white text-green-600'
+                      : isActive
+                        ? 'bg-green-500 text-white'
+                        : 'bg-green-800 text-green-300'
+                      }`}>
                       {isCompleted ? (
                         <CheckCircle className="w-5 h-5" />
                       ) : (
@@ -613,35 +612,6 @@ export default function TwoStepSellerSignup() {
               })}
             </div>
           </div>
-
-          {/* Benefits */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Why Sell With Us?</h3>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <Store className="w-5 h-5 text-green-300 mt-0.5" />
-                <div>
-                  <p className="font-medium">Easy Setup</p>
-                  <p className="text-sm text-green-100">Quick registration and product listing</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <UserCheck className="w-5 h-5 text-green-300 mt-0.5" />
-                <div>
-                  <p className="font-medium">Trusted Platform</p>
-                  <p className="text-sm text-green-100">Secure payments and buyer protection</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <FileText className="w-5 h-5 text-green-300 mt-0.5" />
-                <div>
-                  <p className="font-medium">Analytics & Reports</p>
-                  <p className="text-sm text-green-100">Track sales and manage inventory</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Support */}
           <div className="bg-green-800 bg-opacity-50 rounded-lg p-4">
             <h4 className="font-semibold mb-2">Need Help?</h4>

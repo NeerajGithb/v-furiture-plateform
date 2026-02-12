@@ -31,7 +31,7 @@ export class AdminFinanceRepository implements IAdminFinanceRepository {
     const dateFilter = this.getDateFilter(query);
     
     const revenueStats = await Order.aggregate([
-      { $match: { ...dateFilter, paymentStatus: 'paid' } },
+      { $match: { ...dateFilter, paymentStatus: 'paid', orderStatus: 'delivered' } },
       {
         $group: {
           _id: null,
@@ -84,7 +84,7 @@ export class AdminFinanceRepository implements IAdminFinanceRepository {
           totalOrders: { $sum: 1 },
           completedOrders: { $sum: { $cond: [{ $eq: ['$orderStatus', 'delivered'] }, 1, 0] } },
           pendingOrders: { $sum: { $cond: [{ $in: ['$orderStatus', ['pending', 'confirmed', 'processing', 'shipped']] }, 1, 0] } },
-          totalRevenue: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'paid'] }, '$totalAmount', 0] } },
+          totalRevenue: { $sum: { $cond: [{ $and: [{ $eq: ['$paymentStatus', 'paid'] }, { $eq: ['$orderStatus', 'delivered'] }] }, '$totalAmount', 0] } },
           completedRevenue: { $sum: { $cond: [{ $and: [{ $eq: ['$paymentStatus', 'paid'] }, { $eq: ['$orderStatus', 'delivered'] }] }, '$totalAmount', 0] } },
           pendingRevenue: { $sum: { $cond: [{ $and: [{ $eq: ['$paymentStatus', 'paid'] }, { $ne: ['$orderStatus', 'delivered'] }] }, '$totalAmount', 0] } },
           totalPayments: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'paid'] }, 1, 0] } }
@@ -126,7 +126,7 @@ export class AdminFinanceRepository implements IAdminFinanceRepository {
 
     // Get payment method breakdown
     const paymentMethodStats = await Order.aggregate([
-      { $match: { ...dateFilter, paymentStatus: 'paid' } },
+      { $match: { ...dateFilter, paymentStatus: 'paid', orderStatus: 'delivered' } },
       {
         $group: {
           _id: '$paymentMethod',
@@ -156,8 +156,8 @@ export class AdminFinanceRepository implements IAdminFinanceRepository {
       orderStatus[stat._id] = stat.count;
     });
 
-    // Get recent transactions (paid orders only)
-    const transactions = await Order.find({ ...dateFilter, paymentStatus: 'paid' })
+    // Get recent transactions (paid and delivered orders only)
+    const transactions = await Order.find({ ...dateFilter, paymentStatus: 'paid', orderStatus: 'delivered' })
       .populate('userId', 'name email')
       .sort({ createdAt: -1 })
       .limit(50)
@@ -227,7 +227,7 @@ export class AdminFinanceRepository implements IAdminFinanceRepository {
     }
 
     const revenueData = await Order.aggregate([
-      { $match: { ...dateFilter, paymentStatus: 'paid' } },
+      { $match: { ...dateFilter, paymentStatus: 'paid', orderStatus: 'delivered' } },
       {
         $group: {
           _id: { $dateToString: { format: groupFormat, date: '$createdAt' } },
@@ -412,7 +412,7 @@ export class AdminFinanceRepository implements IAdminFinanceRepository {
 
   async getTopSellersByRevenue(limit: number = 10) {
     const topSellers = await Order.aggregate([
-      { $match: { paymentStatus: 'paid' } },
+      { $match: { paymentStatus: 'paid', orderStatus: 'delivered' } },
       { $unwind: '$items' },
       {
         $group: {
@@ -454,7 +454,7 @@ export class AdminFinanceRepository implements IAdminFinanceRepository {
 
   async getRevenueByCategory() {
     const categoryRevenue = await Order.aggregate([
-      { $match: { paymentStatus: 'paid' } },
+      { $match: { paymentStatus: 'paid', orderStatus: 'delivered' } },
       { $unwind: '$items' },
       {
         $lookup: {

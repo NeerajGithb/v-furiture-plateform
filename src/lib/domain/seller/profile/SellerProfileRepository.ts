@@ -304,7 +304,8 @@ export class SellerProfileRepository {
       // Get order stats using product IDs
       totalOrders = await Order.countDocuments({ 
         'items.productId': { $in: productIds },
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        orderStatus: 'delivered'
       });
       
       completedOrders = await Order.countDocuments({ 
@@ -330,6 +331,7 @@ export class SellerProfileRepository {
       monthlyOrders = await Order.countDocuments({
         'items.productId': { $in: productIds },
         paymentStatus: 'paid',
+        orderStatus: 'delivered',
         createdAt: { $gte: startOfMonth }
       });
 

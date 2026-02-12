@@ -59,7 +59,7 @@ export class AdminDashboardRepository implements IAdminDashboardRepository {
 
   private async getRevenue(filter: any): Promise<number> {
     const result = await Order.aggregate([
-      { $match: { ...filter, paymentStatus: 'paid' } },
+      { $match: { ...filter, paymentStatus: 'paid', orderStatus: 'delivered' } },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     return result[0]?.total || 0;

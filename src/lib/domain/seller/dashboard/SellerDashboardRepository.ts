@@ -39,7 +39,7 @@ export class SellerDashboardRepository implements ISellerDashboardRepository {
       Order.countDocuments({ ...orderBaseQuery, orderStatus: 'processing' }),
       Order.countDocuments({ ...orderBaseQuery, orderStatus: 'shipped' }),
       Order.countDocuments({ ...orderBaseQuery, orderStatus: 'delivered' }),
-      Order.find({ ...orderBaseQuery, paymentStatus: 'paid' })
+      Order.find({ ...orderBaseQuery, paymentStatus: 'paid', orderStatus: 'delivered' })
         .select('totalAmount orderStatus createdAt deliveredAt').lean(),
       Order.find(orderBaseQuery)
         .sort({ createdAt: -1 })

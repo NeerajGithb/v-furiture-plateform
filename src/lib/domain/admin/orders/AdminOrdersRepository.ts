@@ -106,7 +106,14 @@ export class AdminOrdersRepository implements IAdminOrdersRepository {
               totalRevenue: { $sum: "$totalAmount" },
               paidRevenue: {
                 $sum: {
-                  $cond: [{ $eq: ["$paymentStatus", "paid"] }, "$totalAmount", 0]
+                  $cond: [
+                    { $and: [
+                      { $eq: ["$paymentStatus", "paid"] },
+                      { $eq: ["$orderStatus", "delivered"] }
+                    ]},
+                    "$totalAmount",
+                    0
+                  ]
                 }
               },
               pendingRevenue: {

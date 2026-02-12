@@ -20,7 +20,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   }
 
   const { page, limit, total, totalPages, hasNext, hasPrev } = pagination;
-  
+
   const startItem = ((page - 1) * limit) + 1;
   const endItem = Math.min(page * limit, total);
 
@@ -46,7 +46,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
-    
+
     if (totalPages <= maxVisible) {
       // Show all pages if total is small
       for (let i = 1; i <= totalPages; i++) {
@@ -79,16 +79,16 @@ export const Pagination: React.FC<PaginationProps> = ({
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 px-6 py-4">
+    <div className="bg-white border border-slate-200 rounded-lg px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Info */}
-        <p className="text-sm text-gray-600">
-          Showing {startItem} to {endItem} of {total} {itemName}
+        <p className="text-sm text-slate-600">
+          Showing <span className="font-semibold text-slate-900">{startItem}</span> to <span className="font-semibold text-slate-900">{endItem}</span> of <span className="font-semibold text-slate-900">{total}</span> {itemName}
         </p>
 
         {/* Controls */}
@@ -97,7 +97,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           <button
             onClick={handlePrevious}
             disabled={!hasPrev || isLoading}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <ChevronLeft className="w-4 h-4" />
             Previous
@@ -108,16 +108,15 @@ export const Pagination: React.FC<PaginationProps> = ({
             {getPageNumbers().map((pageNum, index) => (
               <React.Fragment key={index}>
                 {pageNum === '...' ? (
-                  <span className="px-2 py-1 text-gray-500">...</span>
+                  <span className="px-3 py-2 text-sm text-slate-500">...</span>
                 ) : (
                   <button
                     onClick={() => handlePageClick(pageNum as number)}
                     disabled={isLoading}
-                    className={`px-3 py-1.5 text-sm rounded ${
-                      pageNum === page
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    } disabled:cursor-not-allowed`}
+                    className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-all ${pageNum === page
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                      } disabled:cursor-not-allowed`}
                   >
                     {pageNum}
                   </button>
@@ -127,7 +126,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           </div>
 
           {/* Mobile Page Info */}
-          <div className="sm:hidden px-3 py-1.5 text-sm text-gray-600">
+          <div className="sm:hidden px-3 py-2 text-sm font-medium text-slate-600">
             {page} of {totalPages}
           </div>
 
@@ -135,7 +134,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           <button
             onClick={handleNext}
             disabled={!hasNext || isLoading}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Next
             <ChevronRight className="w-4 h-4" />

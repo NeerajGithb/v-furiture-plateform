@@ -191,6 +191,7 @@ export class SellerEarningsCalculator {
     const matchConditions: any = {
       'items.sellerId': new Types.ObjectId(this.sellerId),
       paymentStatus: 'paid',
+      orderStatus: 'delivered',
       createdAt: { $gte: startDate }
     };
 

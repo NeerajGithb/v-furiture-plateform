@@ -150,7 +150,7 @@ class SellerProductsService extends BasePrivateService {
   // Bulk update products
   async bulkUpdateProducts(data: BulkUpdateRequest): Promise<{ modifiedCount: number; message: string }> {
     const response = await this.post<{ modifiedCount: number; message: string }>("/seller/products", {
-      action: "bulk_update",
+      action: "bulk-update",
       ...data
     });
 
@@ -166,7 +166,7 @@ class SellerProductsService extends BasePrivateService {
   // Bulk delete products
   async bulkDeleteProducts(productIds: string[]): Promise<{ deletedCount: number; message: string }> {
     const response = await this.post<{ deletedCount: number; message: string }>("/seller/products", {
-      action: "bulk_delete",
+      action: "bulk-delete",
       productIds
     });
 

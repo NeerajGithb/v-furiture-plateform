@@ -4,57 +4,62 @@ import { ShoppingCart, Clock, Package, Truck, CheckCircle } from 'lucide-react';
 import { OrdersStatsProps } from '@/types/seller/orders';
 
 export default function OrdersStats({ stats }: OrdersStatsProps) {
+  const statItems = [
+    {
+      label: 'Total Orders',
+      value: stats?.total || 0,
+      icon: ShoppingCart,
+      bgColor: 'bg-slate-50',
+      iconBg: 'bg-slate-100',
+      iconColor: 'text-slate-600'
+    },
+    {
+      label: 'Pending',
+      value: stats?.pending || 0,
+      icon: Clock,
+      bgColor: 'bg-amber-50',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600'
+    },
+    {
+      label: 'Processing',
+      value: stats?.processing || 0,
+      icon: Package,
+      bgColor: 'bg-blue-50',
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600'
+    },
+    {
+      label: 'Shipped',
+      value: stats?.shipped || 0,
+      icon: Truck,
+      bgColor: 'bg-purple-50',
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600'
+    },
+    {
+      label: 'Delivered',
+      value: stats?.delivered || 0,
+      icon: CheckCircle,
+      bgColor: 'bg-emerald-50',
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600'
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="p-2 bg-gray-100 rounded-lg">
-            <ShoppingCart className="w-4 h-4 text-gray-600" />
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-5">
+      {statItems.map((stat) => (
+        <div key={stat.label} className="bg-white border border-slate-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className={`p-2 ${stat.iconBg} rounded-lg`}>
+              <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+            </div>
+            <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{stat.label}</span>
           </div>
-          <span className="text-xs font-medium text-gray-500">Total</span>
+          <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
         </div>
-        <p className="text-2xl font-bold text-gray-900">{stats?.total || 0}</p>
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="p-2 bg-amber-50 rounded-lg">
-            <Clock className="w-4 h-4 text-amber-500" />
-          </div>
-          <span className="text-xs font-medium text-gray-500">Pending</span>
-        </div>
-        <p className="text-2xl font-bold text-gray-900">{stats?.pending || 0}</p>
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <Package className="w-4 h-4 text-blue-500" />
-          </div>
-          <span className="text-xs font-medium text-gray-500">Processing</span>
-        </div>
-        <p className="text-2xl font-bold text-gray-900">{stats?.processing || 0}</p>
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="p-2 bg-purple-50 rounded-lg">
-            <Truck className="w-4 h-4 text-purple-500" />
-          </div>
-          <span className="text-xs font-medium text-gray-500">Shipped</span>
-        </div>
-        <p className="text-2xl font-bold text-gray-900">{stats?.shipped || 0}</p>
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="p-2 bg-emerald-50 rounded-lg">
-            <CheckCircle className="w-4 h-4 text-emerald-500" />
-          </div>
-          <span className="text-xs font-medium text-gray-500">Delivered</span>
-        </div>
-        <p className="text-2xl font-bold text-gray-900">{stats?.delivered || 0}</p>
-      </div>
+      ))}
     </div>
   );
 }

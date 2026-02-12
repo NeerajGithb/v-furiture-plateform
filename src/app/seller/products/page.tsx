@@ -30,13 +30,13 @@ export default function SellerProductsPage() {
 
   const { data: productsData, isPending, error, refetch, isFetching } = useSellerProducts();
   const { data: stats, isPending: statsPending } = useSellerProductStats();
-  
+
   const updateProductStatus = useUpdateProductStatus();
   const deleteProduct = useDeleteProduct();
   const duplicateProduct = useDuplicateProduct();
   const bulkUpdate = useBulkUpdateProducts();
   const bulkDelete = useBulkDeleteProducts();
-  
+
   const { confirm } = useConfirm();
 
   const handleUpdateStatus = (productId: string, isPublished: boolean) => {
@@ -125,13 +125,13 @@ export default function SellerProductsPage() {
         isRefreshing={isFetching}
         actions={
           selectedProducts.length > 0 ? (
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               {hasUnpublished && (
                 <button
                   key="publish"
                   onClick={handleBulkPublish}
                   disabled={bulkUpdate.isPending}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center gap-2"
                 >
                   <CheckSquare className="w-4 h-4" />
                   Publish ({selectedProductsData.filter(p => !p.isPublished).length})
@@ -142,7 +142,7 @@ export default function SellerProductsPage() {
                   key="unpublish"
                   onClick={handleBulkUnpublish}
                   disabled={bulkUpdate.isPending}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-slate-600 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-all flex items-center gap-2"
                 >
                   <CheckSquare className="w-4 h-4" />
                   Unpublish ({selectedProductsData.filter(p => p.isPublished).length})
@@ -152,7 +152,7 @@ export default function SellerProductsPage() {
                 key="delete"
                 onClick={handleBulkDelete}
                 disabled={bulkDelete.isPending}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-rose-600 text-white text-sm font-semibold rounded-lg hover:bg-rose-700 disabled:opacity-50 transition-all flex items-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />
                 Delete ({selectedProducts.length})
@@ -162,8 +162,8 @@ export default function SellerProductsPage() {
         }
       />
 
-      <LoaderGuard 
-        isLoading={isPending} 
+      <LoaderGuard
+        isLoading={isPending}
         error={error}
         isEmpty={!productsData || (productsData.pagination?.total || 0) === 0}
         emptyMessage="No products"
@@ -188,7 +188,7 @@ export default function SellerProductsPage() {
             />
 
             {productsData!.pagination && productsData!.pagination.totalPages > 1 && (
-              <Pagination 
+              <Pagination
                 pagination={{
                   ...productsData!.pagination,
                   hasNext: productsData!.pagination.page < productsData!.pagination.totalPages,

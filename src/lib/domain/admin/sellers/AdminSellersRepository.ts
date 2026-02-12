@@ -120,7 +120,7 @@ export class AdminSellersRepository implements IAdminSellersRepository {
           }
         ]),
         Order.aggregate([
-          ...(dateFilter ? [{ $match: { createdAt: { $gte: dateFilter } } }] : []),
+          ...(dateFilter ? [{ $match: { createdAt: { $gte: dateFilter }, paymentStatus: 'paid', orderStatus: 'delivered' } }] : [{ $match: { paymentStatus: 'paid', orderStatus: 'delivered' } }]),
           {
             $lookup: {
               from: "sellers",

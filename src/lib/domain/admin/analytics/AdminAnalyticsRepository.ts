@@ -52,7 +52,7 @@ export class AdminAnalyticsRepository implements IAdminAnalyticsRepository {
     
     const [revenueStats, userStats, productStats, sellerStats] = await Promise.all([
       Order.aggregate([
-        { $match: { ...dateFilter, paymentStatus: 'paid' } },
+        { $match: { ...dateFilter, paymentStatus: 'paid', orderStatus: 'delivered' } },
         {
           $group: {
             _id: null,
@@ -88,7 +88,7 @@ export class AdminAnalyticsRepository implements IAdminAnalyticsRepository {
     const groupFormat = this.getGroupFormat(query.groupBy);
 
     const dateGroup = { $dateToString: { format: groupFormat, date: '$createdAt' } };
-    const paidFilter = { ...dateFilter, paymentStatus: 'paid' };
+    const paidFilter = { ...dateFilter, paymentStatus: 'paid', orderStatus: 'delivered' };
 
     const [orderMetrics, userMetrics, productMetrics, sellerMetrics] = await Promise.all([
       Order.aggregate([
@@ -201,7 +201,7 @@ export class AdminAnalyticsRepository implements IAdminAnalyticsRepository {
 
   async getTopPerformers(query: AdminAnalyticsQueryRequest): Promise<TopPerformers> {
     const dateFilter = this.getDateFilter(query);
-    const paidFilter = { ...dateFilter, paymentStatus: 'paid' };
+    const paidFilter = { ...dateFilter, paymentStatus: 'paid', orderStatus: 'delivered' };
 
     const [topProducts, topSellers, topCategories] = await Promise.all([
       Order.aggregate([
@@ -367,7 +367,7 @@ export class AdminAnalyticsRepository implements IAdminAnalyticsRepository {
 
   async getSalesAnalytics(query: AdminAnalyticsQueryRequest): Promise<SalesAnalytics> {
     const dateFilter = this.getDateFilter(query);
-    const paidFilter = { ...dateFilter, paymentStatus: 'paid' };
+    const paidFilter = { ...dateFilter, paymentStatus: 'paid', orderStatus: 'delivered' };
     
     const [salesStats, ordersByStatus, paymentMethods] = await Promise.all([
       Order.aggregate([

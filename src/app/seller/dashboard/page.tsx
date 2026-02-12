@@ -25,9 +25,9 @@ export default function SellerDashboardPage() {
 
       <LoaderGuard isLoading={isPending} error={error} isEmpty={!data}>
         {() => (
-          <>
+          <div className="space-y-6">
             <PendingApprovalBanner status={seller?.status} />
-            
+
             <PrimaryStats data={data!} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -40,7 +40,7 @@ export default function SellerDashboardPage() {
                 <RecentOrdersCard orders={data!.recentOrders} />
               </div>
             </div>
-          </>
+          </div>
         )}
       </LoaderGuard>
     </>
