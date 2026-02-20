@@ -1,27 +1,37 @@
-import { Package, ShoppingCart, BarChart3, Users } from 'lucide-react';
+import { Package, ShoppingCart, BarChart3, Star } from 'lucide-react';
+
+const actions = [
+  { href: '/seller/products/add', icon: Package, label: 'Add Product' },
+  { href: '/seller/orders', icon: ShoppingCart, label: 'Orders' },
+  { href: '/seller/earnings', icon: BarChart3, label: 'Earnings' },
+  { href: '/seller/reviews', icon: Star, label: 'Reviews' },
+];
 
 export function QuickActions() {
-  const actions = [
-    { href: '/seller/products/add', icon: Package, label: 'Add Product' },
-    { href: '/seller/orders', icon: ShoppingCart, label: 'Orders' },
-    { href: '/seller/earnings', icon: BarChart3, label: 'Earnings' },
-    { href: '/seller/reviews', icon: Users, label: 'Reviews' }
-  ];
-
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-6">
-      <h3 className="text-sm font-semibold text-slate-900 mb-5 uppercase tracking-wide">
-        Quick Actions
-      </h3>
-      <div className="grid grid-cols-2 gap-3">
+    <div className="bg-white border border-[#E5E7EB] rounded-lg">
+      {/* Card header */}
+      <div className="px-5 py-4 border-b border-[#F3F4F6]">
+        <h3 className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-widest">
+          Quick Actions
+        </h3>
+      </div>
+
+      {/* Grid of actions */}
+      <div className="p-4 grid grid-cols-2 gap-2">
         {actions.map((action) => (
           <a
             key={action.label}
             href={action.href}
-            className="flex flex-col items-center justify-center p-4 text-center border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm transition-all group"
+            className="
+              group flex flex-col items-center justify-center gap-2 p-3
+              border border-[#E5E7EB] rounded-md text-center
+              hover:bg-[#F8F9FA] hover:border-[#D1D5DB]
+              transition-all duration-150
+            "
           >
-            <action.icon className="w-6 h-6 text-slate-400 group-hover:text-slate-900 mb-2 transition-colors" />
-            <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">
+            <action.icon className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#111111] transition-colors" />
+            <span className="text-[12px] font-medium text-[#6B7280] group-hover:text-[#111111] transition-colors">
               {action.label}
             </span>
           </a>

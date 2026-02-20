@@ -1,20 +1,10 @@
 import { useState } from 'react';
-import { 
-  Check, 
-  Trash2, 
-  Eye, 
-  EyeOff,
-  Clock,
-  AlertCircle,
-  Package,
-  CreditCard,
-  Users,
-  Settings,
-  TrendingUp,
-  ExternalLink
+import {
+  Check, Trash2, Eye, Clock, AlertCircle, Package,
+  CreditCard, Users, Settings, TrendingUp, ExternalLink,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import { SellerNotification } from '@/types/seller/notifications';
-import { TYPE_BADGE_CONFIG, PRIORITY_BADGE_CONFIG } from '@/types/seller/notifications';
 
 interface NotificationsListProps {
   notifications: SellerNotification[];
@@ -28,6 +18,23 @@ interface NotificationsListProps {
   isDeleting: boolean;
 }
 
+const TYPE_ICONS: Record<string, any> = {
+  order: Package, account: Users, product: Package, payment: CreditCard,
+  inventory: Package, performance: TrendingUp, customer: Users, system: Settings,
+};
+
+function timeAgo(dateString: string) {
+  const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+const PRIORITY_DOT: Record<string, string> = {
+  high: 'bg-rose-400', medium: 'bg-amber-400', low: 'bg-[#9CA3AF]',
+};
+
 export function NotificationsList({
   notifications,
   selectedNotifications,
@@ -37,192 +44,142 @@ export function NotificationsList({
   onMarkAsRead,
   onDelete,
   isMarkingAsRead,
-  isDeleting
+  isDeleting,
 }: NotificationsListProps) {
-  const [expandedNotification, setExpandedNotification] = useState<string | null>(null);
-
-  const typeIcons = {
-    order: Package,
-    account: Users,
-    product: Package,
-    payment: CreditCard,
-    inventory: Package,
-    performance: TrendingUp,
-    customer: Users,
-    system: Settings
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) {
-      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-      return `${diffInMinutes}m ago`;
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    } else {
-      const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays}d ago`;
-    }
-  };
-
-  const toggleExpanded = (notificationId: string) => {
-    setExpandedNotification(
-      expandedNotification === notificationId ? null : notificationId
-    );
-  };
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const allSelected = notifications.length > 0 && selectedNotifications.length === notifications.length;
   const someSelected = selectedNotifications.length > 0 && selectedNotifications.length < notifications.length;
 
   if (notifications.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Check className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">All caught up!</h3>
-          <p className="text-gray-600">You have no notifications at the moment.</p>
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-12 text-center">
+        <div className="w-12 h-12 bg-[#F3F4F6] rounded-full flex items-center justify-center mx-auto mb-4">
+          <Check className="w-5 h-5 text-[#9CA3AF]" />
         </div>
+        <h3 className="text-[14px] font-semibold text-[#111111] mb-1">All caught up</h3>
+        <p className="text-[12px] text-[#9CA3AF]">No notifications at the moment.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
-      {/* Header with bulk actions */}
-      <div className="px-6 py-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={allSelected}
-                ref={(input) => {
-                  if (input) input.indeterminate = someSelected;
-                }}
-                onChange={() => allSelected ? onClearSelection() : onSelectAll()}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                {selectedNotifications.length > 0 
-                  ? `${selectedNotifications.length} selected`
-                  : 'Select all'
-                }
-              </span>
-            </label>
+    <div className="bg-white border border-[#E5E7EB] rounded-lg overflow-hidden">
+      {/* Toolbar */}
+      <div className="px-4 py-3 border-b border-[#F3F4F6] bg-[#F8F9FA] flex items-center justify-between">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            ref={el => { if (el) el.indeterminate = someSelected; }}
+            onChange={() => allSelected ? onClearSelection() : onSelectAll()}
+            className="w-3.5 h-3.5 border-[#D1D5DB] rounded accent-[#111111]"
+          />
+          <span className="text-[12px] text-[#555555] font-medium">
+            {selectedNotifications.length > 0 ? `${selectedNotifications.length} selected` : 'Select all'}
+          </span>
+        </label>
+
+        {selectedNotifications.length > 0 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => selectedNotifications.forEach(onMarkAsRead)}
+              disabled={isMarkingAsRead}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#E5E7EB] bg-white text-[12px] font-medium text-[#374151] rounded-md hover:bg-[#F8F9FA] disabled:opacity-40 transition-all"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Mark Read
+            </button>
+            <button
+              onClick={() => selectedNotifications.forEach(onDelete)}
+              disabled={isDeleting}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#FECACA] bg-white text-[12px] font-medium text-rose-600 rounded-md hover:bg-rose-50 disabled:opacity-40 transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </button>
           </div>
-          
-          {selectedNotifications.length > 0 && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => selectedNotifications.forEach(onMarkAsRead)}
-                disabled={isMarkingAsRead}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors"
-              >
-                <Check className="w-4 h-4" />
-                Mark Read
-              </button>
-              <button
-                onClick={() => selectedNotifications.forEach(onDelete)}
-                disabled={isDeleting}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-rose-50 text-rose-700 rounded-lg hover:bg-rose-100 disabled:opacity-50 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Notifications List */}
-      <div className="divide-y divide-gray-200">
+      {/* List */}
+      <div className="divide-y divide-[#F3F4F6]">
         {notifications.map((notification) => {
-          const IconComponent = typeIcons[notification.type] || AlertCircle;
+          const IconComponent = TYPE_ICONS[notification.type] || AlertCircle;
           const isSelected = selectedNotifications.includes(notification._id);
-          const isExpanded = expandedNotification === notification._id;
-          const typeConfig = TYPE_BADGE_CONFIG[notification.type];
-          const priorityConfig = PRIORITY_BADGE_CONFIG[notification.priority];
+          const isExpanded = expanded === notification._id;
+          const priorityDot = PRIORITY_DOT[notification.priority] || 'bg-[#9CA3AF]';
 
           return (
             <div
               key={notification._id}
-              className={`p-6 hover:bg-gray-50 transition-colors ${
-                !notification.read ? 'bg-blue-50/30' : ''
-              } ${isSelected ? 'bg-blue-50' : ''}`}
+              className={`px-4 py-4 transition-colors duration-100 ${isSelected ? 'bg-[#F8F9FA]' : !notification.read ? 'bg-[#FAFAFA]' : 'hover:bg-[#FAFAFA]'
+                }`}
             >
-              <div className="flex items-start gap-4">
-                {/* Selection checkbox */}
-                <label className="flex items-center mt-1">
+              <div className="flex items-start gap-3">
+                {/* Checkbox */}
+                <label className="flex items-center mt-0.5 cursor-pointer flex-shrink-0">
                   <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => onToggleSelection(notification._id)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-3.5 h-3.5 border-[#D1D5DB] rounded accent-[#111111]"
                   />
                 </label>
 
-                {/* Notification icon */}
-                <div className={`p-2 rounded-lg ${typeConfig.bg} ${typeConfig.border} border`}>
-                  <IconComponent className={`w-5 h-5 ${typeConfig.text}`} />
+                {/* Icon */}
+                <div className="w-8 h-8 bg-[#F3F4F6] border border-[#E5E7EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <IconComponent className="w-4 h-4 text-[#6B7280]" />
                 </div>
 
-                {/* Notification content */}
+                {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className={`text-sm font-semibold ${
-                          !notification.read ? 'text-gray-900' : 'text-gray-700'
-                        }`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h4 className={`text-[13px] font-semibold truncate ${!notification.read ? 'text-[#111111]' : 'text-[#374151]'}`}>
                           {notification.title}
                         </h4>
                         {!notification.read && (
-                          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${priorityDot}`} />
                         )}
                       </div>
-                      
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${typeConfig.bg} ${typeConfig.text} ${typeConfig.border}`}>
-                          {typeConfig.label}
+
+                      {/* Type + priority badges */}
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <span className="px-1.5 py-0.5 text-[10px] font-semibold border rounded capitalize bg-[#F8F9FA] border-[#E5E7EB] text-[#6B7280]">
+                          {notification.type}
                         </span>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${priorityConfig.bg} ${priorityConfig.text} ${priorityConfig.border}`}>
+                        <span className="px-1.5 py-0.5 text-[10px] font-semibold border rounded capitalize bg-[#F8F9FA] border-[#E5E7EB] text-[#6B7280]">
                           {notification.priority}
                         </span>
                       </div>
 
-                      <p className={`text-sm ${
-                        !notification.read ? 'text-gray-700' : 'text-gray-600'
-                      } ${isExpanded ? '' : 'line-clamp-2'}`}>
+                      <p className={`text-[12px] text-[#555555] ${isExpanded ? '' : 'line-clamp-2'}`}>
                         {notification.message}
                       </p>
 
                       {notification.message.length > 100 && (
                         <button
-                          onClick={() => toggleExpanded(notification._id)}
-                          className="text-sm text-blue-600 hover:text-blue-700 mt-1"
+                          onClick={() => setExpanded(isExpanded ? null : notification._id)}
+                          className="text-[11px] text-[#6B7280] hover:text-[#111111] mt-1 flex items-center gap-1 transition-colors"
                         >
-                          {isExpanded ? 'Show less' : 'Show more'}
+                          {isExpanded ? <><ChevronUp className="w-3 h-3" /> Show less</> : <><ChevronDown className="w-3 h-3" /> Show more</>}
                         </button>
                       )}
 
-                      {/* Actions */}
+                      {/* Action buttons from notification */}
                       {notification.actions && notification.actions.length > 0 && (
-                        <div className="flex items-center gap-2 mt-3">
-                          {notification.actions.map((action, index) => (
+                        <div className="flex items-center gap-2 mt-2.5">
+                          {notification.actions.map((action, i) => (
                             <button
-                              key={index}
-                              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                                action.style === 'primary'
-                                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                  : action.style === 'danger'
-                                  ? 'bg-red-600 text-white hover:bg-red-700'
-                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              }`}
+                              key={`${notification._id}-action-${i}`}
+                              className={`px-3 py-1.5 text-[11px] font-medium rounded-md border transition-colors ${action.style === 'primary'
+                                ? 'bg-[#111111] text-white border-[#111111] hover:bg-[#222222]'
+                                : action.style === 'danger'
+                                  ? 'border-[#FECACA] text-rose-600 bg-white hover:bg-rose-50'
+                                  : 'border-[#E5E7EB] text-[#555555] bg-white hover:bg-[#F8F9FA]'
+                                }`}
                             >
                               {action.label}
                             </button>
@@ -230,44 +187,40 @@ export function NotificationsList({
                         </div>
                       )}
 
-                      {/* Link */}
                       {notification.link && (
                         <a
                           href={notification.link}
-                          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-2"
+                          className="inline-flex items-center gap-1 text-[11px] text-[#555555] hover:text-[#111111] mt-2 transition-colors"
                         >
-                          View details
-                          <ExternalLink className="w-3 h-3" />
+                          View details <ExternalLink className="w-3 h-3" />
                         </a>
                       )}
                     </div>
 
-                    {/* Timestamp and actions */}
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                    {/* Timestamp + row actions */}
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1 text-[10px] text-[#9CA3AF]">
                         <Clock className="w-3 h-3" />
-                        {formatDate(notification.createdAt)}
+                        {timeAgo(notification.createdAt)}
                       </div>
-                      
                       <div className="flex items-center gap-1">
                         {!notification.read && (
                           <button
                             onClick={() => onMarkAsRead(notification._id)}
                             disabled={isMarkingAsRead}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                             title="Mark as read"
+                            className="p-1.5 rounded-md text-[#9CA3AF] hover:text-[#374151] hover:bg-[#F3F4F6] disabled:opacity-40 transition-all"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        
                         <button
                           onClick={() => onDelete(notification._id)}
                           disabled={isDeleting}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                           title="Delete"
+                          className="p-1.5 rounded-md text-[#9CA3AF] hover:text-rose-500 hover:bg-rose-50 disabled:opacity-40 transition-all"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>

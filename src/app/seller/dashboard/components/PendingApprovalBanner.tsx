@@ -1,5 +1,6 @@
+'use client';
+
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
 
 interface PendingApprovalBannerProps {
@@ -12,28 +13,24 @@ export function PendingApprovalBanner({ status }: PendingApprovalBannerProps) {
   if (status !== 'pending' || !show) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6"
+    <div
+      role="alert"
+      className="flex items-start gap-3 bg-[#FFFBEB] border border-[#FDE68A] rounded-lg px-4 py-3.5 mb-5"
     >
-      <div className="flex items-start gap-3">
-        <AlertTriangle className="w-5 h-5 text-amber-700 mt-0.5 flex-shrink-0" />
-        <div className="flex-1">
-          <h3 className="text-sm font-semibold text-amber-900">Account Pending Approval</h3>
-          <p className="text-sm text-amber-800 mt-1 leading-relaxed">
-            Your seller account is currently under review. Most features are available, but full access will be granted upon approval.
-          </p>
-        </div>
-        <button
-          onClick={() => setShow(false)}
-          className="text-amber-700 hover:text-amber-900 p-1 transition-colors"
-          aria-label="Dismiss"
-        >
-          <X className="w-4 h-4" />
-        </button>
+      <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold text-[#92400E]">Account Pending Approval</p>
+        <p className="text-[12px] text-[#B45309] mt-0.5 leading-relaxed">
+          Your seller account is under review. Full access will be granted upon approval.
+        </p>
       </div>
-    </motion.div>
+      <button
+        onClick={() => setShow(false)}
+        aria-label="Dismiss banner"
+        className="text-amber-400 hover:text-amber-600 p-0.5 transition-colors flex-shrink-0"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
   );
 }

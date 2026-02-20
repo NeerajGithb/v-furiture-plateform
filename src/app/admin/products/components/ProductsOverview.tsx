@@ -10,14 +10,14 @@ interface ProductsOverviewProps {
 export default function ProductsOverview({ stats, isLoading, onNavigate }: ProductsOverviewProps) {
     if (isLoading) {
         return (
-            <div className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Product Statistics</h3>
+            <div className="bg-white border border-[#E5E7EB] rounded-lg p-5 mb-6">
+                <h3 className="text-[15px] font-semibold text-[#111111] mb-4 tracking-tight">Product Statistics</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     {[1, 2, 3, 4, 5, 6].map((i) => (
-                        <div key={i} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div key={i} className="border border-[#E5E7EB] rounded-md p-4">
                             <div className="animate-pulse">
-                                <div className="h-3 bg-gray-200 rounded w-20 mb-2"></div>
-                                <div className="h-6 bg-gray-200 rounded w-12"></div>
+                                <div className="h-3 bg-[#F1F3F5] rounded w-20 mb-2"></div>
+                                <div className="h-6 bg-[#F1F3F5] rounded w-12"></div>
                             </div>
                         </div>
                     ))}
@@ -29,58 +29,58 @@ export default function ProductsOverview({ stats, isLoading, onNavigate }: Produ
     if (!stats) return null;
 
     return (
-        <div className="p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Product Statistics</h3>
+        <div className="bg-white border border-[#E5E7EB] rounded-lg p-5 mb-6">
+            <h3 className="text-[15px] font-semibold text-[#111111] mb-4 tracking-tight">Product Statistics</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all">
+                <div className="border border-[#E5E7EB] rounded-md p-4 hover:border-[#D1D5DB] hover:shadow-sm transition-all">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-gray-500">Total Products</span>
-                        <Package className="w-4 h-4 text-gray-400" />
+                        <span className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">Total Products</span>
+                        <Package className="w-4 h-4 text-[#9CA3AF]" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats.total.toLocaleString()}</p>
+                    <p className="text-[22px] font-semibold text-[#111111] tracking-tight">{stats.total.toLocaleString()}</p>
                 </div>
 
                 <div
-                    className="bg-white border border-gray-200 rounded-lg p-4 hover:border-amber-300 cursor-pointer transition-all"
+                    className="border border-[#E5E7EB] rounded-md p-4 hover:border-[#D97706] hover:shadow-sm cursor-pointer transition-all"
                     onClick={() => onNavigate('pending')}
                 >
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-amber-600">Pending</span>
-                        <Clock className="w-4 h-4 text-amber-500" />
+                        <span className="text-[11px] font-medium text-[#D97706] uppercase tracking-wider">Pending</span>
+                        <Clock className="w-4 h-4 text-[#D97706]" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats.pending.toLocaleString()}</p>
+                    <p className="text-[22px] font-semibold text-[#111111] tracking-tight">{stats.pending.toLocaleString()}</p>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all">
+                <div className="border border-[#E5E7EB] rounded-md p-4 hover:border-[#D1D5DB] hover:shadow-sm transition-all">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-gray-500">Approved</span>
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">Approved</span>
+                        <CheckCircle className="w-4 h-4 text-[#059669]" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats.approved.toLocaleString()}</p>
+                    <p className="text-[22px] font-semibold text-[#111111] tracking-tight">{stats.approved.toLocaleString()}</p>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all">
+                <div className="border border-[#E5E7EB] rounded-md p-4 hover:border-[#D1D5DB] hover:shadow-sm transition-all">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-gray-500">Rejected</span>
-                        <XCircle className="w-4 h-4 text-red-500" />
+                        <span className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">Rejected</span>
+                        <XCircle className="w-4 h-4 text-[#DC2626]" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats.rejected.toLocaleString()}</p>
+                    <p className="text-[22px] font-semibold text-[#111111] tracking-tight">{stats.rejected.toLocaleString()}</p>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all">
+                <div className="border border-[#E5E7EB] rounded-md p-4 hover:border-[#D1D5DB] hover:shadow-sm transition-all">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-green-600">Published</span>
-                        <Eye className="w-4 h-4 text-green-500" />
+                        <span className="text-[11px] font-medium text-[#059669] uppercase tracking-wider">Published</span>
+                        <Eye className="w-4 h-4 text-[#059669]" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats.published.toLocaleString()}</p>
+                    <p className="text-[22px] font-semibold text-[#111111] tracking-tight">{stats.published.toLocaleString()}</p>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all">
+                <div className="border border-[#E5E7EB] rounded-md p-4 hover:border-[#D1D5DB] hover:shadow-sm transition-all">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-gray-500">Unpublished</span>
-                        <EyeOff className="w-4 h-4 text-gray-400" />
+                        <span className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">Unpublished</span>
+                        <EyeOff className="w-4 h-4 text-[#9CA3AF]" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats.unpublished.toLocaleString()}</p>
+                    <p className="text-[22px] font-semibold text-[#111111] tracking-tight">{stats.unpublished.toLocaleString()}</p>
                 </div>
             </div>
         </div>

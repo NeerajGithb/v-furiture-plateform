@@ -7,9 +7,9 @@ interface OrderMetricsCardProps {
 
 export default function OrderMetricsCard({ orders }: OrderMetricsCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-lg font-semibold mb-4">Order Metrics</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+    <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+      <h2 className="text-[15px] font-semibold text-[#111111] mb-5 tracking-tight">Order Metrics</h2>
+      <div className="flex flex-wrap gap-6">
         <MetricItem label="Total Orders" value={orders.totalOrders.toLocaleString('en-IN')} />
         <MetricItem label="Pending" value={orders.pendingOrders.toLocaleString('en-IN')} />
         <MetricItem label="Processing" value={orders.processingOrders.toLocaleString('en-IN')} />

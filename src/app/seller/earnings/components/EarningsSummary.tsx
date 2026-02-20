@@ -1,136 +1,93 @@
 'use client';
 
-import { TrendingUp, TrendingDown, DollarSign, CreditCard, Clock, Package, Percent, ShoppingBag } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, CreditCard, Clock, Package, Percent, ShoppingBag, Minus } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
 import { EarningsSummaryProps } from '@/types/seller/earnings';
 
+const DOT_COLOR: Record<string, string> = {
+  'Total Revenue': 'bg-[#111111]',
+  'Available Balance': 'bg-emerald-400',
+  'Pending Revenue': 'bg-amber-400',
+  'Platform Fees': 'bg-[#9CA3AF]',
+  'Net Earnings': 'bg-blue-400',
+  'Total Orders': 'bg-violet-400',
+  'Avg Order Value': 'bg-indigo-400',
+};
+
+function GrowthChip({ growth }: { growth: number }) {
+  if (growth === 0) return <span className="text-[11px] font-semibold text-[#9CA3AF] flex items-center gap-0.5"><Minus className="w-3 h-3" />0%</span>;
+  const positive = growth > 0;
+  return (
+    <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${positive ? 'text-emerald-600' : 'text-rose-500'}`}>
+      {positive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+      {positive ? '+' : ''}{growth.toFixed(1)}%
+    </span>
+  );
+}
+
 export default function EarningsSummary({ summary }: EarningsSummaryProps) {
   const metrics = [
-    {
-      title: 'Total Revenue',
-      value: formatCurrency(summary?.totalRevenue || 0),
-      icon: DollarSign,
-      iconBg: 'bg-gray-50',
-      iconColor: 'text-gray-900',
-      growth: summary?.growth,
-      description: 'All-time earnings'
-    },
-    {
-      title: 'Available Balance',
-      value: formatCurrency(summary?.completedRevenue || 0),
-      icon: CreditCard,
-      iconBg: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
-      description: 'Ready for payout'
-    },
-    {
-      title: 'Pending Revenue',
-      value: formatCurrency(summary?.pendingRevenue || 0),
-      icon: Clock,
-      iconBg: 'bg-amber-50',
-      iconColor: 'text-amber-600',
-      description: 'Processing orders'
-    },
-    {
-      title: 'Platform Fees',
-      value: formatCurrency(summary?.platformFees || 0),
-      icon: Percent,
-      iconBg: 'bg-purple-50',
-      iconColor: 'text-purple-600',
-      description: 'Commission deducted'
-    }
+    { title: 'Total Revenue', value: formatCurrency(summary?.totalRevenue || 0), icon: DollarSign, growth: summary?.growth, desc: 'All-time earnings' },
+    { title: 'Available Balance', value: formatCurrency(summary?.completedRevenue || 0), icon: CreditCard, desc: 'Ready for payout' },
+    { title: 'Pending Revenue', value: formatCurrency(summary?.pendingRevenue || 0), icon: Clock, desc: 'Processing orders' },
+    { title: 'Platform Fees', value: formatCurrency(summary?.platformFees || 0), icon: Percent, desc: 'Commission deducted' },
   ];
 
-  // Additional metrics if available
-  const additionalMetrics = [];
-  
-  if (summary?.netEarnings !== undefined) {
-    additionalMetrics.push({
-      title: 'Net Earnings',
-      value: formatCurrency(summary.netEarnings),
-      icon: Package,
-      iconBg: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-      description: 'After platform fees'
-    });
-  }
+  const extra = [
+    summary?.netEarnings !== undefined && { title: 'Net Earnings', value: formatCurrency(summary.netEarnings), icon: Package, desc: 'After platform fees' },
+    summary?.totalOrders !== undefined && { title: 'Total Orders', value: summary.totalOrders.toLocaleString(), icon: ShoppingBag, desc: 'Orders completed' },
+    summary?.averageOrderValue !== undefined && { title: 'Avg Order Value', value: formatCurrency(summary.averageOrderValue), icon: TrendingUp, desc: 'Per order average' },
+  ].filter(Boolean) as { title: string; value: string; icon: any; desc: string }[];
 
-  if (summary?.totalOrders !== undefined) {
-    additionalMetrics.push({
-      title: 'Total Orders',
-      value: summary.totalOrders.toLocaleString(),
-      icon: ShoppingBag,
-      iconBg: 'bg-indigo-50',
-      iconColor: 'text-indigo-600',
-      description: 'Orders completed'
-    });
-  }
-
-  if (summary?.averageOrderValue !== undefined) {
-    additionalMetrics.push({
-      title: 'Avg Order Value',
-      value: formatCurrency(summary.averageOrderValue),
-      icon: TrendingUp,
-      iconBg: 'bg-green-50',
-      iconColor: 'text-green-600',
-      description: 'Per order average'
-    });
-  }
-
-  const allMetrics = [...metrics, ...additionalMetrics];
+  const breakdownRows = summary ? [
+    { label: 'Available Balance', value: summary.completedRevenue || 0, dot: 'bg-emerald-400' },
+    { label: 'Pending Revenue', value: summary.pendingRevenue || 0, dot: 'bg-amber-400' },
+    { label: 'Platform Fees', value: summary.platformFees || 0, dot: 'bg-[#9CA3AF]' },
+  ] : [];
+  const total = summary?.totalRevenue || 1;
 
   return (
-    <div className="space-y-6">
-      {/* Main Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {metrics.map((metric, index) => (
-          <div key={index} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 ${metric.iconBg} rounded-lg`}>
-                <metric.icon className={`w-5 h-5 ${metric.iconColor}`} />
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-500">{metric.title}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {metric.value}
-                </p>
+    <div className="space-y-5">
+      {/* Primary stat cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {metrics.map((m) => (
+          <div key={m.title} className="bg-white border border-[#E5E7EB] rounded-lg p-5 hover:border-[#D1D5DB] hover:shadow-sm transition-all duration-150">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-widest">{m.title}</span>
+              <div className="w-7 h-7 bg-[#F8F9FA] border border-[#F3F4F6] rounded-md flex items-center justify-center">
+                <m.icon className="w-3.5 h-3.5 text-[#6B7280]" />
               </div>
             </div>
-            
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-500">{metric.description}</p>
-              {metric.growth !== undefined && (
-                <div className="flex items-center gap-1.5 text-sm">
-                  {metric.growth >= 0 ? (
-                    <TrendingUp className="w-4 h-4 text-emerald-500" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-rose-500" />
-                  )}
-                  <span className={`font-medium ${metric.growth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {metric.growth >= 0 ? '+' : ''}{metric.growth.toFixed(1)}%
-                  </span>
-                </div>
-              )}
+            <div className="flex items-end gap-2">
+              <div className="flex items-center gap-2">
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${DOT_COLOR[m.title]}`} />
+                <span className="text-[22px] font-bold text-[#111111] tabular-nums leading-none truncate">{m.value}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-[11px] text-[#9CA3AF]">{m.desc}</span>
+              {m.growth !== undefined && <GrowthChip growth={m.growth} />}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Additional Metrics if available */}
-      {additionalMetrics.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {additionalMetrics.map((metric, index) => (
-            <div key={index} className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2.5 ${metric.iconBg} rounded-lg`}>
-                  <metric.icon className={`w-4 h-4 ${metric.iconColor}`} />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">{metric.title}</p>
-                  <p className="text-lg font-semibold text-gray-900">{metric.value}</p>
-                  <p className="text-xs text-gray-400">{metric.description}</p>
+      {/* Extra metrics */}
+      {extra.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {extra.map((m) => (
+            <div key={m.title} className="bg-white border border-[#E5E7EB] rounded-lg p-5 hover:border-[#D1D5DB] hover:shadow-sm transition-all duration-150">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-widest">{m.title}</span>
+                <div className="w-7 h-7 bg-[#F8F9FA] border border-[#F3F4F6] rounded-md flex items-center justify-center">
+                  <m.icon className="w-3.5 h-3.5 text-[#6B7280]" />
                 </div>
               </div>
+              <div className="flex items-center gap-2">
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${DOT_COLOR[m.title] || 'bg-[#9CA3AF]'}`} />
+                <span className="text-[20px] font-bold text-[#111111] tabular-nums leading-none truncate">{m.value}</span>
+              </div>
+              <p className="text-[11px] text-[#9CA3AF] mt-1.5">{m.desc}</p>
             </div>
           ))}
         </div>
@@ -138,85 +95,39 @@ export default function EarningsSummary({ summary }: EarningsSummaryProps) {
 
       {/* Revenue Breakdown */}
       {summary && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Breakdown</h3>
-          <div className="space-y-4">
-            {/* Progress bars for revenue breakdown */}
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Available Balance</span>
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(summary.completedRevenue || 0)}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
-                  style={{ 
-                    width: `${summary.totalRevenue > 0 ? (summary.completedRevenue / summary.totalRevenue) * 100 : 0}%` 
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Pending Revenue</span>
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(summary.pendingRevenue || 0)}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-amber-500 h-2 rounded-full transition-all duration-300"
-                  style={{ 
-                    width: `${summary.totalRevenue > 0 ? (summary.pendingRevenue / summary.totalRevenue) * 100 : 0}%` 
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Platform Fees</span>
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(summary.platformFees || 0)}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-purple-500 h-2 rounded-full transition-all duration-300"
-                  style={{ 
-                    width: `${summary.totalRevenue > 0 ? (summary.platformFees / summary.totalRevenue) * 100 : 0}%` 
-                  }}
-                />
-              </div>
-            </div>
+        <div className="bg-white border border-[#E5E7EB] rounded-lg">
+          <div className="px-5 py-4 border-b border-[#F3F4F6]">
+            <h3 className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Revenue Breakdown</h3>
           </div>
-
-          {/* Summary totals */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <div className="flex justify-between items-center">
-              <span className="text-base font-medium text-gray-900">Total Revenue</span>
-              <span className="text-xl font-bold text-gray-900">
-                {formatCurrency(summary.totalRevenue || 0)}
-              </span>
-            </div>
-            {summary.growth !== undefined && (
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-sm text-gray-500">Growth vs last period</span>
-                <div className="flex items-center gap-1.5">
-                  {summary.growth >= 0 ? (
-                    <TrendingUp className="w-4 h-4 text-emerald-500" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-rose-500" />
-                  )}
-                  <span className={`text-sm font-medium ${summary.growth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {summary.growth >= 0 ? '+' : ''}{summary.growth.toFixed(1)}%
-                  </span>
+          <div className="px-5 py-4 space-y-4">
+            {breakdownRows.map((row) => {
+              const pct = total > 0 ? Math.min((row.value / total) * 100, 100) : 0;
+              return (
+                <div key={row.label}>
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-1.5 h-1.5 rounded-full ${row.dot}`} />
+                      <span className="text-[12px] text-[#555555] font-medium">{row.label}</span>
+                    </div>
+                    <span className="text-[12px] font-semibold text-[#111111] tabular-nums">{formatCurrency(row.value)}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-[#F3F4F6] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${row.dot}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
                 </div>
+              );
+            })}
+
+            <div className="flex justify-between items-center pt-3 border-t border-[#F3F4F6]">
+              <span className="text-[12px] font-semibold text-[#111111]">Total Revenue</span>
+              <div className="flex items-center gap-3">
+                {summary.growth !== undefined && <GrowthChip growth={summary.growth} />}
+                <span className="text-[16px] font-bold text-[#111111] tabular-nums">{formatCurrency(summary.totalRevenue || 0)}</span>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}

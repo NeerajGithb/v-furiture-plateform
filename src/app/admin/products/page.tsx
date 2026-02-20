@@ -166,9 +166,9 @@ export default function AdminProductsPage() {
           <button
             onClick={handleExport}
             disabled={exportProducts.isPending}
-            className="flex items-center gap-2 px-3 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium"
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium text-white bg-[#111111] border border-[#111111] rounded-md hover:bg-[#000000] transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#111111] focus:ring-offset-1"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
             {exportProducts.isPending ? 'Exporting...' : 'Export'}
           </button>
         }

@@ -3,36 +3,39 @@
 import { Download } from 'lucide-react';
 import { EarningsHeaderProps } from '@/types/seller/earnings';
 
-export default function EarningsHeader({
-  period,
-  onPeriodChange,
-  onExport,
-  isExporting
-}: EarningsHeaderProps) {
+const PERIOD_OPTIONS = [
+  { value: '7days', label: 'Last 7 days' },
+  { value: '30days', label: 'Last 30 days' },
+  { value: '90days', label: 'Last 90 days' },
+  { value: '1year', label: 'Last year' },
+];
+
+export default function EarningsHeader({ period, onPeriodChange, onExport, isExporting }: EarningsHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="flex items-start justify-between mb-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Earnings</h1>
-        <p className="text-sm text-gray-500 mt-1">Track your revenue and payouts</p>
+        <h1 className="text-[20px] font-semibold text-[#111111] tracking-tight leading-tight">Earnings</h1>
+        <p className="text-[13px] text-[#6B7280] mt-0.5">Track your revenue and payouts</p>
       </div>
-      <div className="flex items-center gap-3">
+
+      <div className="flex items-center gap-2">
         <select
           value={period}
-          onChange={(e) => onPeriodChange(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 text-sm bg-white"
+          onChange={e => onPeriodChange(e.target.value)}
+          className="px-3 py-1.5 text-[12px] font-medium text-[#374151] border border-[#E5E7EB] rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#111111] focus:border-transparent cursor-pointer"
         >
-          <option value="7days">Last 7 days</option>
-          <option value="30days">Last 30 days</option>
-          <option value="90days">Last 90 days</option>
-          <option value="1year">Last year</option>
+          {PERIOD_OPTIONS.map(p => (
+            <option key={p.value} value={p.value}>{p.label}</option>
+          ))}
         </select>
+
         <button
           onClick={onExport}
           disabled={isExporting}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 text-sm font-medium"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-[#555555] bg-white border border-[#E5E7EB] rounded-md hover:bg-[#F8F9FA] hover:text-[#111111] disabled:opacity-40 transition-all"
         >
-          <Download className="w-4 h-4" />
-          {isExporting ? 'Exporting...' : 'Export'}
+          <Download className="w-3.5 h-3.5" />
+          {isExporting ? 'Exporting…' : 'Export'}
         </button>
       </div>
     </div>

@@ -9,28 +9,27 @@ interface LoaderProps {
 export const Loader: React.FC<LoaderProps> = ({
   text = 'Loading...',
   fullScreen = false,
-  size = 'md'
+  size = 'md',
 }) => {
   const containerClasses = fullScreen
-    ? 'fixed inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50'
+    ? 'fixed inset-0 bg-white/95 flex items-center justify-center z-50'
     : 'flex items-center justify-center w-full h-full min-h-[220px]';
 
-  const getSizeClasses = () => {
-    switch (size) {
-      case 'sm':
-        return 'h-8 w-8 border-2';
-      case 'lg':
-        return 'h-16 w-16 border-4';
-      default:
-        return 'h-12 w-12 border-[3px]';
-    }
-  };
+  const sizeClasses = {
+    sm: 'h-5 w-5 border-[1.5px]',
+    md: 'h-8 w-8 border-2',
+    lg: 'h-12 w-12 border-[3px]',
+  }[size];
 
   return (
-    <div className={containerClasses}>
-      <div className="text-center">
-        <div className={`animate-spin rounded-full border-b-slate-900 border-slate-200 mx-auto ${getSizeClasses()}`}></div>
-        {text && <p className="mt-4 text-sm text-slate-600">{text}</p>}
+    <div className={containerClasses} aria-label="Loading" role="status">
+      <div className="flex flex-col items-center gap-3">
+        <div
+          className={`animate-spin rounded-full border-[#E5E7EB] border-t-[#111111] ${sizeClasses}`}
+        />
+        {text && (
+          <p className="text-[12px] font-medium text-[#9CA3AF]">{text}</p>
+        )}
       </div>
     </div>
   );

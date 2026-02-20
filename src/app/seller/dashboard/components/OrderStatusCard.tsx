@@ -1,4 +1,4 @@
-import { Clock, Package, Truck, CheckCircle } from 'lucide-react';
+import { Clock, Package, Truck, CheckCircle, ArrowRight } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
 import { SellerOrderStats, SellerRevenueStats } from '@/types/seller/dashboard';
 
@@ -7,50 +7,80 @@ interface OrderStatusCardProps {
   revenue: SellerRevenueStats;
 }
 
+const statusRows = [
+  {
+    key: 'pending' as const,
+    label: 'Pending',
+    icon: Clock,
+    dot: 'bg-amber-400',
+  },
+  {
+    key: 'processing' as const,
+    label: 'Processing',
+    icon: Package,
+    dot: 'bg-blue-400',
+  },
+  {
+    key: 'shipped' as const,
+    label: 'Shipped',
+    icon: Truck,
+    dot: 'bg-violet-400',
+  },
+  {
+    key: 'delivered' as const,
+    label: 'Delivered',
+    icon: CheckCircle,
+    dot: 'bg-emerald-400',
+  },
+];
+
 export function OrderStatusCard({ orders, revenue }: OrderStatusCardProps) {
-  const statusStats = [
-    { label: 'Pending', value: orders.pending, color: 'text-amber-700 bg-amber-50', icon: Clock },
-    { label: 'Processing', value: orders.processing, color: 'text-blue-700 bg-blue-50', icon: Package },
-    { label: 'Shipped', value: orders.shipped, color: 'text-purple-700 bg-purple-50', icon: Truck },
-    { label: 'Delivered', value: orders.delivered, color: 'text-emerald-700 bg-emerald-50', icon: CheckCircle }
-  ];
+  const avgOrderValue = (revenue.total || 0) / Math.max(orders.total || 1, 1);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-6">
-      <h3 className="text-sm font-semibold text-slate-900 mb-5 uppercase tracking-wide">
-        Order Status
-      </h3>
-      <div className="space-y-4">
-        {statusStats.map((status) => (
-          <div key={status.label} className="flex items-center justify-between group">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${status.color.split(' ')[1]}`}>
-                <status.icon className={`w-5 h-5 ${status.color.split(' ')[0]}`} />
-              </div>
-              <span className="text-base font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
-                {status.label}
-              </span>
+    <div className="bg-white border border-[#E5E7EB] rounded-lg">
+      {/* Card header */}
+      <div className="px-5 py-4 border-b border-[#F3F4F6]">
+        <h3 className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-widest">
+          Order Status
+        </h3>
+      </div>
+
+      {/* Status rows */}
+      <div className="px-5 py-4 space-y-3">
+        {statusRows.map(({ key, label, icon: Icon, dot }) => (
+          <div key={key} className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
+              <span className="text-[13px] text-[#555555] font-medium">{label}</span>
             </div>
-            <span className="text-base font-bold text-slate-900 tabular-nums">
-              {status.value}
+            <span className="text-[13px] font-semibold text-[#111111] tabular-nums">
+              {orders[key] ?? 0}
             </span>
           </div>
         ))}
       </div>
 
-      <div className="mt-6 pt-6 border-t border-slate-100">
-        <div className="flex items-center justify-between text-sm mb-4">
-          <span className="text-slate-600">Avg. Order Value</span>
-          <span className="font-semibold text-slate-900 text-base">
-            {formatCurrency((revenue.total || 0) / Math.max(orders.total || 1, 1))}
+      {/* Footer */}
+      <div className="px-5 py-4 border-t border-[#F3F4F6] space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-[12px] text-[#9CA3AF] font-medium">Avg. Order Value</span>
+          <span className="text-[13px] font-semibold text-[#111111] tabular-nums">
+            {formatCurrency(avgOrderValue)}
           </span>
         </div>
-        <button
-          onClick={() => window.location.href = '/seller/orders'}
-          className="w-full text-sm font-semibold text-slate-700 hover:text-slate-900 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all"
+        <a
+          href="/seller/orders"
+          className="
+            flex items-center justify-center gap-1.5 w-full py-2 text-[12px] font-semibold
+            text-[#555555] border border-[#E5E7EB] rounded-md
+            hover:bg-[#F8F9FA] hover:text-[#111111] hover:border-[#D1D5DB]
+            transition-all duration-150
+          "
         >
           View All Orders
-        </button>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </a>
       </div>
     </div>
   );

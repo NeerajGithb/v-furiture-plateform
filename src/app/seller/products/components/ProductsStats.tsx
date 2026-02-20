@@ -1,23 +1,39 @@
+import { Package, Eye, FileEdit, AlertTriangle } from 'lucide-react';
 import { ProductStats } from '@/types/seller/products';
 
 interface ProductsStatsProps {
   stats: ProductStats;
 }
 
-export function ProductsStats({ stats }: ProductsStatsProps) {
-  const statItems = [
-    { label: 'Total Products', value: stats.total, color: 'bg-blue-50 border-blue-100 text-blue-700', textColor: 'text-blue-900' },
-    { label: 'Published', value: stats.published, color: 'bg-emerald-50 border-emerald-100 text-emerald-700', textColor: 'text-emerald-900' },
-    { label: 'Draft', value: stats.draft, color: 'bg-amber-50 border-amber-100 text-amber-700', textColor: 'text-amber-900' },
-    { label: 'Low Stock', value: stats.lowStock, color: 'bg-rose-50 border-rose-100 text-rose-700', textColor: 'text-rose-900' },
-  ];
+const statItems = (stats: ProductStats) => [
+  { label: 'Total Products', value: stats.total, icon: Package, dot: 'bg-[#6B7280]' },
+  { label: 'Published', value: stats.published, icon: Eye, dot: 'bg-emerald-400' },
+  { label: 'Draft', value: stats.draft, icon: FileEdit, dot: 'bg-amber-400' },
+  { label: 'Low Stock', value: stats.lowStock, icon: AlertTriangle, dot: 'bg-rose-400' },
+];
 
+export function ProductsStats({ stats }: ProductsStatsProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-      {statItems.map((stat) => (
-        <div key={stat.label} className={`${stat.color} border rounded-lg p-6`}>
-          <p className="text-sm font-semibold uppercase tracking-wide mb-2">{stat.label}</p>
-          <p className={`text-3xl font-bold ${stat.textColor}`}>{stat.value}</p>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+      {statItems(stats).map((stat) => (
+        <div
+          key={stat.label}
+          className="bg-white border border-[#E5E7EB] rounded-lg p-5 hover:border-[#D1D5DB] hover:shadow-sm transition-all duration-150"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-widest">
+              {stat.label}
+            </span>
+            <div className="w-7 h-7 bg-[#F8F9FA] border border-[#F3F4F6] rounded-md flex items-center justify-center">
+              <stat.icon className="w-3.5 h-3.5 text-[#6B7280]" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${stat.dot}`} />
+            <span className="text-[24px] font-bold text-[#111111] tabular-nums leading-none">
+              {stat.value}
+            </span>
+          </div>
         </div>
       ))}
     </div>

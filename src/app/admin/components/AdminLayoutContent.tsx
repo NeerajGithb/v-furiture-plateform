@@ -2,7 +2,6 @@
 
 import React, { useState, createContext, useContext, useEffect } from 'react';
 import { useSessionSecurity } from '@/hooks/useSessionSecurity';
-import { SecurityNotice } from '@/components/SecurityNotice';
 import AdminSidebar from './AdminSidebar';
 import GlobalHeader from '@/components/GlobalHeader';
 
@@ -13,14 +12,14 @@ interface SidebarContextType {
 
 const SidebarContext = createContext<SidebarContextType>({
   isCompact: false,
-  setIsCompact: () => {},
+  setIsCompact: () => { },
 });
 
 export const useSidebar = () => useContext(SidebarContext);
 
 export default function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const [isCompact, setIsCompactState] = useState(false);
-  
+
   // Initialize session security for admin
   useSessionSecurity();
 
@@ -44,19 +43,17 @@ export default function AdminLayoutContent({ children }: { children: React.React
 
   return (
     <SidebarContext.Provider value={{ isCompact, setIsCompact }}>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-[#F8F9FA]">
         <AdminSidebar />
-        <div 
-          className={`flex-1 ${
-            isCompact ? 'ml-16' : 'ml-64'
-          } transition-all duration-300 flex flex-col`}
+        <div
+          className={`flex-1 ${isCompact ? 'ml-[60px]' : 'ml-[220px]'
+            } transition-all duration-200 flex flex-col`}
         >
           <GlobalHeader />
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 space-y-6">
             {children}
           </main>
         </div>
-        <SecurityNotice />
       </div>
     </SidebarContext.Provider>
   );

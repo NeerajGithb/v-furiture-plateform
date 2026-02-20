@@ -3,25 +3,24 @@
 import { usePathname } from 'next/navigation';
 import { TimePeriod, useGlobalFilterStore } from '@/stores/globalFilterStore';
 import { useMemo } from 'react';
+import { X } from 'lucide-react';
 
 const timePeriods: { value: TimePeriod; label: string }[] = [
-  { value: '1h', label: '1 Hour' },
-  { value: '24h', label: '24 Hours' },
-  { value: '7d', label: '7 Days' },
-  { value: '30d', label: '30 Days' },
-  { value: '90d', label: '90 Days' },
-  { value: '1y', label: '1 Year' },
-  { value: 'all', label: 'All Time' },
+  { value: '1h', label: '1h' },
+  { value: '24h', label: '24h' },
+  { value: '7d', label: '7d' },
+  { value: '30d', label: '30d' },
+  { value: '90d', label: '90d' },
+  { value: '1y', label: '1y' },
+  { value: 'all', label: 'All' },
 ];
 
 export default function GlobalHeader() {
   const pathname = usePathname();
-
   const { period, setPeriod, reset } = useGlobalFilterStore();
 
   const isDetailPage = useMemo(() => {
     if (!pathname) return false;
-
     const hideHeaderPatterns = [
       /\/profile$/,
       /\/coupons/,
@@ -29,56 +28,60 @@ export default function GlobalHeader() {
       /\/products\/[^\/]+\/edit$/,
       /\/orders\/[^\/]+$/,
     ];
-
     return hideHeaderPatterns.some(pattern => pattern.test(pathname));
   }, [pathname]);
 
-  const handlePeriodChange = (newPeriod: TimePeriod) => {
-    setPeriod(newPeriod);
-  };
-
-  const handleClearFilters = () => {
-    reset();
-  };
-
   const hasActiveFilters = period !== '30d';
 
-  if (isDetailPage) {
-    return null;
-  }
+  if (isDetailPage) return null;
 
   return (
-    <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-      <div className="px-6 py-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-slate-700">Period:</span>
-            <div className="flex bg-slate-100 p-1 rounded-lg gap-0.5">
-              {timePeriods.map((periodOption) => (
-                <button
-                  key={periodOption.value}
-                  onClick={() => handlePeriodChange(periodOption.value)}
-                  className={`px-3.5 py-2 text-sm font-medium rounded-md transition-all ${period === periodOption.value
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                >
-                  {periodOption.label}
-                </button>
-              ))}
-            </div>
-          </div>
+    <header
+      role="banner"
+      className="bg-white border-b border-[#E5E7EB] sticky top-0 z-10 h-12 flex items-center"
+    >
+      <div className="px-6 flex items-center gap-4 w-full">
+        {/* Label */}
+        <span className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-widest select-none">
+          Period
+        </span>
 
-          {hasActiveFilters && (
+        {/* Pill group */}
+        <div
+          role="group"
+          aria-label="Time period filter"
+          className="flex items-center border border-[#E5E7EB] rounded-md overflow-hidden bg-white"
+        >
+          {timePeriods.map((p, i) => (
             <button
-              onClick={handleClearFilters}
-              className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 rounded-lg transition-all"
+              key={p.value}
+              onClick={() => setPeriod(p.value)}
+              aria-pressed={period === p.value}
+              className={`
+                px-3 py-1 text-[12px] font-medium transition-colors duration-100 border-r border-[#E5E7EB] last:border-r-0
+                ${period === p.value
+                  ? 'bg-[#111111] text-white'
+                  : 'bg-white text-[#555555] hover:bg-[#F8F9FA] hover:text-[#111111]'
+                }
+              `}
             >
-              Clear All
+              {p.label}
             </button>
-          )}
+          ))}
         </div>
+
+        {/* Clear filter */}
+        {hasActiveFilters && (
+          <button
+            onClick={reset}
+            aria-label="Reset period filter"
+            className="flex items-center gap-1.5 text-[12px] text-[#555555] hover:text-[#111111] transition-colors font-medium"
+          >
+            <X className="w-3 h-3" />
+            Reset
+          </button>
+        )}
       </div>
-    </div>
+    </header>
   );
 }

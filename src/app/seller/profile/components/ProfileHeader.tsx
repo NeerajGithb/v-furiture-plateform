@@ -1,4 +1,4 @@
-import { RefreshCw, Settings } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { SellerProfile } from '@/types/seller/profile';
 
 interface ProfileHeaderProps {
@@ -7,25 +7,22 @@ interface ProfileHeaderProps {
   refreshing: boolean;
 }
 
-export function ProfileHeader({ profile, onRefresh, refreshing }: ProfileHeaderProps) {
+export function ProfileHeader({ onRefresh, refreshing }: ProfileHeaderProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
-          <p className="text-gray-600 mt-1">Manage your seller account and business information</p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={onRefresh}
-            disabled={refreshing}
-            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors flex items-center gap-2"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-        </div>
+    <div className="flex items-start justify-between mb-6">
+      <div>
+        <h1 className="text-[20px] font-semibold text-[#111111] tracking-tight leading-tight">Profile Settings</h1>
+        <p className="text-[13px] text-[#6B7280] mt-0.5">Manage your seller account and business information</p>
       </div>
+      <button
+        onClick={onRefresh}
+        disabled={refreshing}
+        aria-label="Refresh profile"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-[#555555] bg-white border border-[#E5E7EB] rounded-md hover:bg-[#F8F9FA] hover:text-[#111111] hover:border-[#D1D5DB] disabled:opacity-40 transition-all"
+      >
+        <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+        Refresh
+      </button>
     </div>
   );
 }

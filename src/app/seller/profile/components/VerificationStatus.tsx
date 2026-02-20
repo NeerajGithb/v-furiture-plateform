@@ -1,6 +1,5 @@
-import { AlertCircle, CheckCircle, Clock, Upload, FileText, Shield } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, FileText, Shield } from 'lucide-react';
 import { SellerProfile } from '@/types/seller/profile';
-import toast from 'react-hot-toast';
 
 interface VerificationStatusProps {
   profile?: SellerProfile;
@@ -10,170 +9,112 @@ interface VerificationStatusProps {
   };
 }
 
+type VerifStatus = 'verified' | 'pending' | 'rejected' | 'unverified';
+const STATUS_CFG: Record<VerifStatus, { dot: string; textColor: string; title: string; desc: string }> = {
+  verified: { dot: 'bg-emerald-400', textColor: 'text-emerald-700', title: 'Account Verified', desc: 'Your business account has been successfully verified. You have access to all seller features.' },
+  pending: { dot: 'bg-amber-400', textColor: 'text-amber-700', title: 'Verification Pending', desc: 'Your verification request is under review. This typically takes 2–3 business days.' },
+  rejected: { dot: 'bg-rose-400', textColor: 'text-rose-600', title: 'Verification Rejected', desc: 'Your request was rejected. Please review the requirements and resubmit.' },
+  unverified: { dot: 'bg-[#9CA3AF]', textColor: 'text-[#111111]', title: 'Verification Required', desc: 'Verify your business to unlock all seller features and increase listing limits.' },
+};
+
+const BENEFITS = [
+  { title: 'Increased Trust', desc: 'Verified badge increases customer confidence' },
+  { title: 'Higher Listing Limits', desc: 'List unlimited products after verification' },
+  { title: 'Priority Support', desc: 'Access faster dedicated support channels' },
+  { title: 'Marketing Tools', desc: 'Unlock access to promotional features' },
+];
+
+const REQUIRED_DOCS = [
+  { title: 'Business Registration Certificate', desc: 'Official business registration document' },
+  { title: 'Tax Identification Number', desc: 'Business tax ID or EIN' },
+  { title: 'Bank Account Verification', desc: 'Business bank account statement' },
+];
+
 export function VerificationStatus({ profile, requestVerification }: VerificationStatusProps) {
-  const handleRequestVerification = async () => {
-    requestVerification.mutate();
-  };
+  let status: VerifStatus = 'unverified';
+  if (profile?.verified) status = 'verified';
+  else if (profile?.documents?.some(d => d.status === 'pending')) status = 'pending';
+  else if (profile?.documents?.some(d => d.status === 'rejected')) status = 'rejected';
 
-  const getVerificationStatus = () => {
-    if (profile?.verified) {
-      return {
-        status: 'verified',
-        icon: <CheckCircle className="w-6 h-6 text-green-600" />,
-        title: 'Account Verified',
-        description: 'Your business account has been successfully verified. You have access to all seller features.',
-        bgColor: 'bg-green-50',
-        borderColor: 'border-green-200',
-        textColor: 'text-green-800'
-      };
-    }
-
-    // Check if there are pending documents
-    const hasPendingDocuments = profile?.documents?.some(doc => doc.status === 'pending');
-    if (hasPendingDocuments) {
-      return {
-        status: 'pending',
-        icon: <Clock className="w-6 h-6 text-yellow-600" />,
-        title: 'Verification Pending',
-        description: 'Your verification request is being reviewed. This process typically takes 2-3 business days.',
-        bgColor: 'bg-yellow-50',
-        borderColor: 'border-yellow-200',
-        textColor: 'text-yellow-800'
-      };
-    }
-
-    // Check if there are rejected documents
-    const hasRejectedDocuments = profile?.documents?.some(doc => doc.status === 'rejected');
-    if (hasRejectedDocuments) {
-      return {
-        status: 'rejected',
-        icon: <AlertCircle className="w-6 h-6 text-red-600" />,
-        title: 'Verification Rejected',
-        description: 'Your verification request was rejected. Please review the requirements and submit again.',
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-200',
-        textColor: 'text-red-800'
-      };
-    }
-
-    return {
-      status: 'unverified',
-      icon: <Shield className="w-6 h-6 text-gray-600" />,
-      title: 'Account Verification Required',
-      description: 'Verify your business account to unlock all seller features and increase your listing limits.',
-      bgColor: 'bg-gray-50',
-      borderColor: 'border-gray-200',
-      textColor: 'text-gray-800'
-    };
-  };
-
-  const statusInfo = getVerificationStatus();
+  const cfg = STATUS_CFG[status];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900">Account Verification</h3>
-        <p className="text-sm text-gray-600 mt-1">Verify your business to access premium seller features</p>
+        <h3 className="text-[14px] font-bold text-[#111111]">Account Verification</h3>
+        <p className="text-[12px] text-[#9CA3AF] mt-0.5">Verify your business to access premium seller features</p>
       </div>
 
-      {/* Verification Status Card */}
-      <div className={`${statusInfo.bgColor} rounded-lg p-6 border ${statusInfo.borderColor}`}>
+      {/* Status banner */}
+      <div className="bg-white border border-[#E5E7EB] rounded-lg px-5 py-4">
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0">
-            {statusInfo.icon}
+          <div className="w-9 h-9 bg-[#F3F4F6] border border-[#E5E7EB] rounded-md flex items-center justify-center flex-shrink-0">
+            {status === 'verified' && <CheckCircle className="w-4.5 h-4.5 text-emerald-500" />}
+            {status === 'pending' && <Clock className="w-4.5 h-4.5 text-amber-500" />}
+            {status === 'rejected' && <AlertCircle className="w-4.5 h-4.5 text-rose-500" />}
+            {status === 'unverified' && <Shield className="w-4.5 h-4.5 text-[#6B7280]" />}
           </div>
           <div className="flex-1">
-            <h4 className={`text-base font-semibold ${statusInfo.textColor}`}>
-              {statusInfo.title}
-            </h4>
-            <p className={`text-sm ${statusInfo.textColor} mt-1`}>
-              {statusInfo.description}
-            </p>
-            
-            {statusInfo.status === 'unverified' && (
-              <button
-                onClick={handleRequestVerification}
-                disabled={requestVerification.isPending}
-                className="mt-4 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 font-medium"
-              >
-                {requestVerification.isPending ? 'Submitting...' : 'Start Verification'}
-              </button>
-            )}
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+              <h4 className={`text-[13px] font-bold ${cfg.textColor}`}>{cfg.title}</h4>
+            </div>
+            <p className="text-[12px] text-[#6B7280] leading-relaxed">{cfg.desc}</p>
 
-            {statusInfo.status === 'rejected' && (
+            {(status === 'unverified' || status === 'rejected') && (
               <button
-                onClick={handleRequestVerification}
+                onClick={() => requestVerification.mutate()}
                 disabled={requestVerification.isPending}
-                className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 font-medium"
+                className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-[#111111] text-white text-[12px] font-medium rounded-md hover:bg-[#222222] disabled:opacity-40 transition-colors"
               >
-                {requestVerification.isPending ? 'Resubmitting...' : 'Resubmit Verification'}
+                {requestVerification.isPending
+                  ? (status === 'rejected' ? 'Resubmitting…' : 'Submitting…')
+                  : (status === 'rejected' ? 'Resubmit Verification' : 'Start Verification')
+                }
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Verification Benefits */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h4 className="text-base font-semibold text-gray-900 mb-4">Verification Benefits</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-gray-900">Increased Trust</p>
-              <p className="text-sm text-gray-600">Verified badge increases customer confidence</p>
+      {/* Benefits */}
+      <div className="bg-white border border-[#E5E7EB] rounded-lg">
+        <div className="px-5 py-3.5 border-b border-[#F3F4F6]">
+          <h4 className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Verification Benefits</h4>
+        </div>
+        <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {BENEFITS.map(({ title, desc }) => (
+            <div key={title} className="flex items-start gap-3">
+              <div className="w-5 h-5 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CheckCircle className="w-3 h-3 text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-[#111111]">{title}</p>
+                <p className="text-[11px] text-[#9CA3AF] mt-0.5">{desc}</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-gray-900">Higher Listing Limits</p>
-              <p className="text-sm text-gray-600">List unlimited products</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-gray-900">Priority Support</p>
-              <p className="text-sm text-gray-600">Get faster customer support</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-gray-900">Marketing Tools</p>
-              <p className="text-sm text-gray-600">Access to promotional features</p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* Required Documents */}
       {!profile?.verified && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h4 className="text-base font-semibold text-gray-900 mb-4">Required Documents</h4>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <FileText className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="font-medium text-gray-900">Business Registration Certificate</p>
-                <p className="text-sm text-gray-600">Official business registration document</p>
+        <div className="bg-white border border-[#E5E7EB] rounded-lg">
+          <div className="px-5 py-3.5 border-b border-[#F3F4F6]">
+            <h4 className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Required Documents</h4>
+          </div>
+          <div className="px-5 py-4 space-y-2.5">
+            {REQUIRED_DOCS.map(({ title, desc }) => (
+              <div key={title} className="flex items-center gap-3 px-3 py-2.5 bg-[#F8F9FA] border border-[#F3F4F6] rounded-md">
+                <div className="w-7 h-7 bg-white border border-[#E5E7EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-semibold text-[#374151]">{title}</p>
+                  <p className="text-[11px] text-[#9CA3AF]">{desc}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <FileText className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="font-medium text-gray-900">Tax Identification Number</p>
-                <p className="text-sm text-gray-600">Business tax ID or EIN</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <FileText className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="font-medium text-gray-900">Bank Account Verification</p>
-                <p className="text-sm text-gray-600">Business bank account statement</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       )}

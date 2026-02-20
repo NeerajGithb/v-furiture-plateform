@@ -1,4 +1,4 @@
-import { CheckCircle, Package, Truck, XCircle } from 'lucide-react';
+import { CheckCircle, Package, Truck, XCircle, X } from 'lucide-react';
 import { SellerOrder, SellerOrderStatus } from '@/types/seller/orders';
 
 interface BulkActionsHeaderProps {
@@ -14,86 +14,86 @@ export function BulkActionsHeader({
   onBulkStatusUpdate,
   onSelectAll,
   onClearSelection,
-  isUpdating
+  isUpdating,
 }: BulkActionsHeaderProps) {
   if (selectedOrders.length === 0) return null;
 
-  // Count orders by status
   const pendingCount = selectedOrders.filter(o => o.orderStatus === 'pending').length;
   const confirmedCount = selectedOrders.filter(o => o.orderStatus === 'confirmed').length;
   const processingCount = selectedOrders.filter(o => o.orderStatus === 'processing').length;
-  const shippedCount = selectedOrders.filter(o => o.orderStatus === 'shipped').length;
-
-  // Determine which actions are applicable
-  const canConfirm = pendingCount > 0;
-  const canProcess = confirmedCount > 0;
-  const canShip = processingCount > 0;
-  const canCancel = selectedOrders.some(o => 
+  const cancellableCount = selectedOrders.filter(o =>
     ['pending', 'confirmed'].includes(o.orderStatus)
-  );
+  ).length;
 
   const actions = [
     {
-      show: canConfirm,
+      show: pendingCount > 0,
       label: `Confirm (${pendingCount})`,
       status: 'confirmed' as SellerOrderStatus,
       icon: CheckCircle,
-      className: 'bg-blue-600 hover:bg-blue-700'
     },
     {
-      show: canProcess,
+      show: confirmedCount > 0,
       label: `Process (${confirmedCount})`,
       status: 'processing' as SellerOrderStatus,
       icon: Package,
-      className: 'bg-indigo-600 hover:bg-indigo-700'
     },
     {
-      show: canShip,
+      show: processingCount > 0,
       label: `Ship (${processingCount})`,
       status: 'shipped' as SellerOrderStatus,
       icon: Truck,
-      className: 'bg-violet-600 hover:bg-violet-700'
     },
     {
-      show: canCancel,
-      label: `Cancel (${selectedOrders.filter(o => ['pending', 'confirmed'].includes(o.orderStatus)).length})`,
+      show: cancellableCount > 0,
+      label: `Cancel (${cancellableCount})`,
       status: 'cancelled' as SellerOrderStatus,
       icon: XCircle,
-      className: 'bg-red-600 hover:bg-red-700'
-    }
-  ].filter(action => action.show);
+      danger: true,
+    },
+  ].filter(a => a.show);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-600 font-medium">
-          {selectedOrders.length} order(s) selected
-        </span>
-        <div className="flex items-center gap-3">
-          {actions.map((action) => (
-            <button
-              key={action.status}
-              onClick={() => onBulkStatusUpdate(action.status)}
-              disabled={isUpdating}
-              className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 text-sm font-medium flex items-center gap-2 ${action.className}`}
-            >
-              <action.icon className="w-4 h-4" />
-              {action.label}
-            </button>
-          ))}
+    <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg px-4 py-3 flex items-center justify-between">
+      <span className="text-[12px] font-semibold text-[#374151]">
+        {selectedOrders.length} order{selectedOrders.length > 1 ? 's' : ''} selected
+      </span>
+
+      <div className="flex items-center gap-2">
+        {actions.map((action) => (
           <button
-            onClick={onSelectAll}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+            key={action.status}
+            onClick={() => onBulkStatusUpdate(action.status)}
+            disabled={isUpdating}
+            className={`
+              inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-md
+              border transition-all duration-150 disabled:opacity-40
+              ${action.danger
+                ? 'border-[#FECACA] bg-white text-rose-600 hover:bg-rose-50'
+                : 'border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#F3F4F6] hover:text-[#111111]'
+              }
+            `}
           >
-            Select All
+            <action.icon className="w-3.5 h-3.5" />
+            {action.label}
           </button>
-          <button
-            onClick={onClearSelection}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
-          >
-            Clear
-          </button>
-        </div>
+        ))}
+
+        <div className="w-px h-4 bg-[#E5E7EB] mx-1" />
+
+        <button
+          onClick={onSelectAll}
+          className="px-3 py-1.5 text-[12px] font-medium text-[#555555] border border-[#E5E7EB] bg-white rounded-md hover:bg-[#F8F9FA] transition-all"
+        >
+          Select All
+        </button>
+        <button
+          onClick={onClearSelection}
+          aria-label="Clear selection"
+          className="p-1.5 text-[#9CA3AF] hover:text-[#374151] border border-[#E5E7EB] bg-white rounded-md hover:bg-[#F8F9FA] transition-all"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
   );

@@ -16,24 +16,36 @@ export default function PageHeader({
     description,
     actions,
     onRefresh,
-    isRefreshing = false
+    isRefreshing = false,
 }: PageHeaderProps) {
     return (
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-start justify-between mb-6">
+            {/* Title block */}
             <div>
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{title}</h1>
+                <h1 className="text-[20px] font-semibold text-[#111111] tracking-tight leading-tight">
+                    {title}
+                </h1>
                 {description && (
-                    <p className="text-sm text-slate-600 mt-1">{description}</p>
+                    <p className="text-[13px] text-[#6B7280] mt-0.5 font-normal">{description}</p>
                 )}
             </div>
-            <div className="flex items-center gap-3">
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
                 {onRefresh && (
                     <button
                         onClick={onRefresh}
                         disabled={isRefreshing}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50 text-sm font-medium text-slate-700"
+                        aria-label="Refresh data"
+                        className="
+              inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium
+              text-[#555555] bg-white border border-[#E5E7EB] rounded-md
+              hover:bg-[#F8F9FA] hover:text-[#111111] hover:border-[#D1D5DB]
+              transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed
+              focus:outline-none focus:ring-2 focus:ring-[#111111] focus:ring-offset-1
+            "
                     >
-                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
                         Refresh
                     </button>
                 )}
