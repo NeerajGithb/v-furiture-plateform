@@ -173,7 +173,7 @@ export function NotificationsList({
                         <div className="flex items-center gap-2 mt-2.5">
                           {notification.actions.map((action, i) => (
                             <button
-                              key={action.url || action.label || i}
+                              key={action.action || action.label || i}
                               className={`px-3 py-1.5 text-[11px] font-medium rounded-md border transition-colors ${action.style === 'primary'
                                 ? 'bg-[#111111] text-white border-[#111111] hover:bg-[#222222]'
                                 : action.style === 'danger'
