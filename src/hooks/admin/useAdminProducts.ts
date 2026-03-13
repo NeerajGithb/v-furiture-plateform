@@ -10,10 +10,11 @@ import { PaginationResult } from "@/lib/domain/shared/types";
 export const useAdminProducts = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore((s) => s.period);
+  const filterVersion = useGlobalFilterStore((s) => s.filterVersion);
   const currentPage = useProductUIStore((s) => s.currentPage);
   
   return useQuery<PaginationResult<AdminProduct>>({
-    queryKey: ["admin-products", period, currentPage],
+    queryKey: ["admin-products", period, currentPage, filterVersion],
     queryFn: () => adminProductsService.getProducts({ period, page: currentPage, limit: 20 }),
     enabled: !!admin && !authLoading,
     staleTime: 2 * 60 * 1000,
@@ -24,9 +25,10 @@ export const useAdminProducts = () => {
 export const useAdminProductStats = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   
   return useQuery<ProductStats>({
-    queryKey: ["admin-product-stats", period],
+    queryKey: ["admin-product-stats", period, filterVersion],
     queryFn: () => adminProductsService.getProductStats(period),
     enabled: !!admin && !authLoading,
     staleTime: 5 * 60 * 1000,

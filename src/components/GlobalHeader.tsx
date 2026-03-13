@@ -31,7 +31,7 @@ export default function GlobalHeader() {
     return hideHeaderPatterns.some(pattern => pattern.test(pathname));
   }, [pathname]);
 
-  const hasActiveFilters = period !== '30d';
+  const hasActiveFilters = period !== '1y';
 
   if (isDetailPage) return null;
 

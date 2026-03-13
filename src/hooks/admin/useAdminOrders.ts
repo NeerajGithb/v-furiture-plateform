@@ -8,10 +8,11 @@ import { adminOrdersService } from "@/services/admin/adminOrdersService";
 export const useAdminOrders = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   const currentPage = useOrderUIStore(s => s.currentPage);
 
   return useQuery({
-    queryKey: ["admin-orders", period, currentPage],
+    queryKey: ["admin-orders", period, currentPage, filterVersion],
     queryFn: () => adminOrdersService.getOrders({ 
       period, 
       page: currentPage, 
@@ -26,9 +27,10 @@ export const useAdminOrders = () => {
 export const useAdminOrderStats = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
 
   return useQuery({
-    queryKey: ["admin-order-stats", period],
+    queryKey: ["admin-order-stats", period, filterVersion],
     queryFn: () => adminOrdersService.getOrderStats(period),
     enabled: !!admin && !authLoading,
     staleTime: 2 * 60 * 1000,

@@ -9,10 +9,11 @@ import type { SellerStatus } from "@/types/admin/sellers";
 export const useAdminSellers = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   const currentPage = useSellersUIStore(s => s.currentPage);
   
   return useQuery({
-    queryKey: ["admin-sellers", period, currentPage],
+    queryKey: ["admin-sellers", period, currentPage, filterVersion],
     queryFn: () => adminSellersService.getSellers({ period, page: currentPage, limit: 20 }),
     enabled: !!admin && !authLoading,
     staleTime: 2 * 60 * 1000,
@@ -23,9 +24,10 @@ export const useAdminSellers = () => {
 export const useAdminSellerStats = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   
   return useQuery({
-    queryKey: ["admin-seller-stats", period],
+    queryKey: ["admin-seller-stats", period, filterVersion],
     queryFn: () => adminSellersService.getSellerStats(period),
     enabled: !!admin && !authLoading,
     staleTime: 5 * 60 * 1000,

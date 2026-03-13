@@ -6,9 +6,10 @@ import { sellerDashboardService } from "@/services/seller/sellerDashboardService
 export const useSellerDashboard = () => {
   const { seller, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   
   return useQuery({
-    queryKey: ["seller-dashboard", period],
+    queryKey: ["seller-dashboard", period, filterVersion],
     queryFn: () => sellerDashboardService.getDashboardData({ period }),
     enabled: !!seller && !authLoading,
     staleTime: 2 * 60 * 1000,

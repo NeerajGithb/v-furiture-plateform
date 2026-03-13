@@ -8,9 +8,10 @@ import { AnalyticsExportRequest } from "@/types/admin/analytics";
 export const useAdminAnalytics = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   
   return useQuery({
-    queryKey: ["admin-analytics", period],
+    queryKey: ["admin-analytics", period, filterVersion],
     queryFn: () => adminAnalyticsService.getAnalyticsData({ period }),
     enabled: !!admin && !authLoading,
     staleTime: 5 * 60 * 1000,

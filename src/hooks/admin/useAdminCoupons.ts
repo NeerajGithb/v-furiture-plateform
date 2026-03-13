@@ -9,10 +9,11 @@ import type { AdminCoupon, CouponCreateRequest, CouponUpdateRequest } from '@/ty
 export const useAdminCoupons = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore((s) => s.period);
+  const filterVersion = useGlobalFilterStore((s) => s.filterVersion);
   const currentPage = useCouponUIStore((s) => s.currentPage);
   
   return useQuery({
-    queryKey: ['admin-coupons', period, currentPage],
+    queryKey: ['admin-coupons', period, currentPage, filterVersion],
     queryFn: () => adminCouponsService.getCoupons({ period, page: currentPage, limit: 10 }),
     enabled: !!admin && !authLoading,
   });

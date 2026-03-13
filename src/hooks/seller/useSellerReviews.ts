@@ -12,10 +12,11 @@ import {
 export const useSellerReviews = () => {
   const { seller, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   const currentPage = useReviewsUIStore(s => s.currentPage);
 
   return useQuery({
-    queryKey: ["seller-reviews", period, currentPage],
+    queryKey: ["seller-reviews", period, currentPage, filterVersion],
     queryFn: () => sellerReviewsService.getReviews({ period, page: currentPage, limit: 20 }),
     enabled: !!seller && !authLoading,
     staleTime: 2 * 60 * 1000,

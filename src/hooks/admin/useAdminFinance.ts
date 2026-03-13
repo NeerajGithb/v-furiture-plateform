@@ -7,9 +7,10 @@ import { adminFinanceService } from "@/services/admin/adminFinanceService";
 export const useAdminFinance = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   
   return useQuery({
-    queryKey: ["admin-finance", period],
+    queryKey: ["admin-finance", period, filterVersion],
     queryFn: () => adminFinanceService.getFinanceData(period),
     enabled: !!admin && !authLoading,
   });

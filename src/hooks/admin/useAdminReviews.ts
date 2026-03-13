@@ -12,10 +12,11 @@ import {
 export const useAdminReviews = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   const currentPage = useReviewUIStore(s => s.currentPage);
   
   return useQuery({
-    queryKey: ["admin-reviews", period, currentPage],
+    queryKey: ["admin-reviews", period, currentPage, filterVersion],
     queryFn: () => adminReviewsService.getReviews({ period, page: currentPage, limit: 10 }),
     enabled: !!admin && !authLoading,
   });
@@ -24,9 +25,10 @@ export const useAdminReviews = () => {
 export const useAdminReviewStats = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   
   return useQuery({
-    queryKey: ["admin-review-stats", period],
+    queryKey: ["admin-review-stats", period, filterVersion],
     queryFn: () => adminReviewsService.getReviewStats(period),
     enabled: !!admin && !authLoading,
   });

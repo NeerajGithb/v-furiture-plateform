@@ -1,7 +1,7 @@
 import { Package, ShoppingCart, BarChart3, Star } from 'lucide-react';
 
 const actions = [
-  { href: '/seller/products/add', icon: Package, label: 'Add Product' },
+  { href: '/seller/products/new', icon: Package, label: 'Add Product' },
   { href: '/seller/orders', icon: ShoppingCart, label: 'Orders' },
   { href: '/seller/earnings', icon: BarChart3, label: 'Earnings' },
   { href: '/seller/reviews', icon: Star, label: 'Reviews' },

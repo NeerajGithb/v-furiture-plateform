@@ -16,9 +16,11 @@ import { Pagination } from '@/components/ui/Pagination';
 import PageHeader from '@/components/PageHeader';
 import { ProductsStats } from './components/ProductsStats';
 import { ProductsGrid } from './components/ProductsGrid';
-import { CheckSquare, Trash2 } from 'lucide-react';
+import { CheckSquare, Trash2, Plus } from 'lucide-react';
+import { useNavigate } from '@/components/NavigationLoader';
 
 export default function SellerProductsPage() {
+  const router = useNavigate();
   const expandedProduct = useSellerProductsStore(s => s.expandedProduct);
   const setExpandedProduct = useSellerProductsStore(s => s.setExpandedProduct);
   const currentPage = useSellerProductsStore(s => s.currentPage);
@@ -60,8 +62,6 @@ export default function SellerProductsPage() {
   };
 
   const selectedProductsData = productsData?.data.filter(p => selectedProducts.includes(p.id)) || [];
-  const allSelectedPublished = selectedProductsData.length > 0 && selectedProductsData.every(p => p.isPublished);
-  const allSelectedUnpublished = selectedProductsData.length > 0 && selectedProductsData.every(p => !p.isPublished);
   const hasPublished = selectedProductsData.some(p => p.isPublished);
   const hasUnpublished = selectedProductsData.some(p => !p.isPublished);
 
@@ -124,41 +124,51 @@ export default function SellerProductsPage() {
         onRefresh={refetch}
         isRefreshing={isFetching}
         actions={
-          selectedProducts.length > 0 ? (
-            <div className="flex gap-3">
-              {hasUnpublished && (
+          <div className="flex gap-3">
+            {selectedProducts.length > 0 ? (
+              <>
+                {hasUnpublished && (
+                  <button
+                    key="publish"
+                    onClick={handleBulkPublish}
+                    disabled={bulkUpdate.isPending}
+                    className="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center gap-2"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                    Publish ({selectedProductsData.filter(p => !p.isPublished).length})
+                  </button>
+                )}
+                {hasPublished && (
+                  <button
+                    key="unpublish"
+                    onClick={handleBulkUnpublish}
+                    disabled={bulkUpdate.isPending}
+                    className="px-4 py-2 bg-slate-600 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-all flex items-center gap-2"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                    Unpublish ({selectedProductsData.filter(p => p.isPublished).length})
+                  </button>
+                )}
                 <button
-                  key="publish"
-                  onClick={handleBulkPublish}
-                  disabled={bulkUpdate.isPending}
-                  className="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center gap-2"
+                  key="delete"
+                  onClick={handleBulkDelete}
+                  disabled={bulkDelete.isPending}
+                  className="px-4 py-2 bg-rose-600 text-white text-sm font-semibold rounded-lg hover:bg-rose-700 disabled:opacity-50 transition-all flex items-center gap-2"
                 >
-                  <CheckSquare className="w-4 h-4" />
-                  Publish ({selectedProductsData.filter(p => !p.isPublished).length})
+                  <Trash2 className="w-4 h-4" />
+                  Delete ({selectedProducts.length})
                 </button>
-              )}
-              {hasPublished && (
-                <button
-                  key="unpublish"
-                  onClick={handleBulkUnpublish}
-                  disabled={bulkUpdate.isPending}
-                  className="px-4 py-2 bg-slate-600 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-all flex items-center gap-2"
-                >
-                  <CheckSquare className="w-4 h-4" />
-                  Unpublish ({selectedProductsData.filter(p => p.isPublished).length})
-                </button>
-              )}
+              </>
+            ) : (
               <button
-                key="delete"
-                onClick={handleBulkDelete}
-                disabled={bulkDelete.isPending}
-                className="px-4 py-2 bg-rose-600 text-white text-sm font-semibold rounded-lg hover:bg-rose-700 disabled:opacity-50 transition-all flex items-center gap-2"
+                onClick={() => router.push('/seller/products/new')}
+                className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2"
               >
-                <Trash2 className="w-4 h-4" />
-                Delete ({selectedProducts.length})
+                <Plus className="w-4 h-4" />
+                Add Product
               </button>
-            </div>
-          ) : undefined
+            )}
+          </div>
         }
       />
 

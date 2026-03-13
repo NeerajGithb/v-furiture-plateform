@@ -9,10 +9,11 @@ import { StockUpdateData } from "@/types/seller/inventory";
 export const useSellerInventory = () => {
   const { seller, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   const currentPage = useInventoryStore(s => s.currentPage);
 
   return useQuery({
-    queryKey: ["seller-inventory", period, currentPage],
+    queryKey: ["seller-inventory", period, currentPage, filterVersion],
     queryFn: () => sellerInventoryService.getInventory({ period, page: currentPage, limit: 20 }),
     enabled: !!seller && !authLoading,
     staleTime: 2 * 60 * 1000,
@@ -23,9 +24,10 @@ export const useSellerInventory = () => {
 export const useSellerInventoryStats = () => {
   const { seller, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
 
   return useQuery({
-    queryKey: ["seller-inventory-stats", period],
+    queryKey: ["seller-inventory-stats", period, filterVersion],
     queryFn: () => sellerInventoryService.getInventoryStats(period),
     enabled: !!seller && !authLoading,
     staleTime: 5 * 60 * 1000,

@@ -10,10 +10,11 @@ import { PaginationResult } from "@/lib/domain/shared/types";
 export const useAdminUsers = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore((s) => s.period);
+  const filterVersion = useGlobalFilterStore((s) => s.filterVersion);
   const currentPage = useUserUIStore((s) => s.currentPage);
   
   return useQuery<PaginationResult<AdminUser>>({
-    queryKey: ["admin-users", period, currentPage],
+    queryKey: ["admin-users", period, currentPage, filterVersion],
     queryFn: () => adminUsersService.getUsers({ period, page: currentPage, limit: 20 }),
     enabled: !!admin && !authLoading,
     staleTime: 2 * 60 * 1000,
@@ -24,9 +25,10 @@ export const useAdminUsers = () => {
 export const useAdminUserStats = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   
   return useQuery<UserStats>({
-    queryKey: ["admin-user-stats", period],
+    queryKey: ["admin-user-stats", period, filterVersion],
     queryFn: () => adminUsersService.getUserStats(period),
     enabled: !!admin && !authLoading,
     staleTime: 5 * 60 * 1000,

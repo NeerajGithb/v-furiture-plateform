@@ -6,9 +6,10 @@ import adminDashboardService from "@/services/admin/adminDashboardService";
 export const useAdminDashboard = () => {
   const { admin, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   
   return useQuery({
-    queryKey: ["admin-dashboard", period],
+    queryKey: ["admin-dashboard", period, filterVersion],
     queryFn: () => adminDashboardService.getDashboardData({ period }),
     enabled: !!admin && !authLoading,
     staleTime: 2 * 60 * 1000,

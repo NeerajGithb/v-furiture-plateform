@@ -5,6 +5,7 @@ export type TimePeriod = '1h' | '24h' | '7d' | '30d' | '90d' | '1y' | 'all';
 
 interface GlobalScopeState {
   period: TimePeriod;
+  filterVersion: number; // Used to force refetch
   setPeriod: (p: TimePeriod) => void;
   reset: () => void;
 }
@@ -12,14 +13,21 @@ interface GlobalScopeState {
 export const useGlobalFilterStore = create<GlobalScopeState>()(
   persist(
     (set) => ({
-      period: '30d',
+      period: '1y',
+      filterVersion: 0,
 
       setPeriod: (period: TimePeriod) => {
-        set({ period });
+        set((state) => ({ 
+          period, 
+          filterVersion: state.filterVersion + 1 
+        }));
       },
 
       reset: () => {
-        set({ period: '30d' });
+        set((state) => ({ 
+          period: '1y',
+          filterVersion: state.filterVersion + 1
+        }));
       },
     }),
     {
@@ -27,6 +35,7 @@ export const useGlobalFilterStore = create<GlobalScopeState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         period: state.period,
+        // Don't persist filterVersion - it should reset on page load
       }),
     }
   )

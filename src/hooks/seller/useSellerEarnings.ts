@@ -13,9 +13,10 @@ import {
 export const useSellerEarnings = () => {
   const { seller, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   
   return useQuery({
-    queryKey: ["seller-earnings", period],
+    queryKey: ["seller-earnings", period, filterVersion],
     queryFn: () => sellerEarningsService.getEarningsData({ period }),
     enabled: !!seller && !authLoading,
     staleTime: 2 * 60 * 1000,
@@ -26,9 +27,10 @@ export const useSellerEarnings = () => {
 export const useSellerEarningsSummary = () => {
   const { seller, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   
   return useQuery({
-    queryKey: ["seller-earnings-summary", period],
+    queryKey: ["seller-earnings-summary", period, filterVersion],
     queryFn: () => sellerEarningsService.getEarningsSummary(period),
     enabled: !!seller && !authLoading,
     staleTime: 2 * 60 * 1000,
@@ -65,9 +67,10 @@ export const useSellerPayouts = () => {
 export const useSellerEarningsAnalytics = () => {
   const { seller, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   
   return useQuery({
-    queryKey: ["seller-earnings-analytics", period],
+    queryKey: ["seller-earnings-analytics", period, filterVersion],
     queryFn: () => sellerEarningsService.getAnalytics(period),
     enabled: !!seller && !authLoading,
     staleTime: 5 * 60 * 1000,

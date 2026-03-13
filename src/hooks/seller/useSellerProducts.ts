@@ -15,10 +15,11 @@ import {
 export const useSellerProducts = () => {
   const { seller, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
   const currentPage = useSellerProductsStore(s => s.currentPage);
 
   return useQuery({
-    queryKey: ["seller-products", period, currentPage],
+    queryKey: ["seller-products", period, currentPage, filterVersion],
     queryFn: () => sellerProductsService.getProducts({ 
       period, 
       page: currentPage, 
@@ -33,9 +34,10 @@ export const useSellerProducts = () => {
 export const useSellerProductStats = () => {
   const { seller, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
 
   return useQuery({
-    queryKey: ["seller-product-stats", period],
+    queryKey: ["seller-product-stats", period, filterVersion],
     queryFn: () => sellerProductsService.getProductStats(period),
     enabled: !!seller && !authLoading,
     staleTime: 5 * 60 * 1000,
@@ -84,9 +86,10 @@ export const useSellerProduct = (productId: string) => {
 export const useProductAnalytics = (productId: string) => {
   const { seller, isLoading: authLoading } = useAuthGuard();
   const period = useGlobalFilterStore(s => s.period);
+  const filterVersion = useGlobalFilterStore(s => s.filterVersion);
 
   return useQuery({
-    queryKey: ["product-analytics", productId, period],
+    queryKey: ["product-analytics", productId, period, filterVersion],
     queryFn: () => sellerProductsService.getProductAnalytics(productId, period),
     enabled: !!seller && !authLoading && !!productId,
     staleTime: 5 * 60 * 1000,
