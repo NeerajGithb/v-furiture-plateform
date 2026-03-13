@@ -10,6 +10,8 @@ interface GlobalScopeState {
   reset: () => void;
 }
 
+const STORAGE_VERSION = 2; // Increment this when changing defaults
+
 export const useGlobalFilterStore = create<GlobalScopeState>()(
   persist(
     (set) => ({
@@ -32,11 +34,22 @@ export const useGlobalFilterStore = create<GlobalScopeState>()(
     }),
     {
       name: 'global-filter-storage',
+      version: STORAGE_VERSION,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         period: state.period,
         // Don't persist filterVersion - it should reset on page load
       }),
+      migrate: (persistedState: any, version: number) => {
+        // If version is old or doesn't exist, reset to new defaults
+        if (version < STORAGE_VERSION) {
+          return {
+            period: '1y',
+            filterVersion: 0,
+          };
+        }
+        return persistedState as GlobalScopeState;
+      },
     }
   )
 );
