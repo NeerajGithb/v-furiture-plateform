@@ -53,28 +53,27 @@ export class AdminSellersRepository implements IAdminSellersRepository {
 
       const totalPages = Math.ceil(total / limit);
 
-      const enrichedSellers = await Promise.all(
-        sellers.map(async (seller) => {
-          const orderStats = await Order.aggregate([
-            { $match: { sellerId: seller._id } },
-            {
-              $group: {
-                _id: null,
-                totalSales: { $sum: 1 },
-                revenue: { $sum: "$totalAmount" }
-              }
-            }
-          ]);
+      // Single aggregate to get order stats for all sellers at once
+      const sellerIds = sellers.map((s: any) => s._id);
+      const orderStatsMap = await Order.aggregate([
+        { $match: { 'items.sellerId': { $in: sellerIds } } },
+        { $unwind: '$items' },
+        { $match: { 'items.sellerId': { $in: sellerIds } } },
+        {
+          $group: {
+            _id: '$items.sellerId',
+            totalSales: { $sum: 1 },
+            revenue: { $sum: '$items.totalPrice' }
+          }
+        }
+      ]);
 
-          const stats = orderStats[0] || { totalSales: 0, revenue: 0 };
-          
-          return {
-            ...seller,
-            totalSales: stats.totalSales,
-            revenue: stats.revenue,
-          };
-        })
-      );
+      const statsById = new Map(orderStatsMap.map((s: any) => [s._id.toString(), s]));
+
+      const enrichedSellers = sellers.map((seller: any) => {
+        const stats = statsById.get(seller._id.toString()) || { totalSales: 0, revenue: 0 };
+        return { ...seller, totalSales: stats.totalSales, revenue: stats.revenue };
+      });
 
       return {
         data: enrichedSellers.map(seller => this.mapToAdminSeller(seller)),

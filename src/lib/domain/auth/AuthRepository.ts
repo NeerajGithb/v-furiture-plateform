@@ -9,7 +9,19 @@ import { SellerRegisterRequest } from "./AuthSchemas";
 import SellerModel from "@/models/Seller";
 import AdminModel from "@/models/Admin";
 import { hashPassword, verifyPassword } from "@/lib/middleware/authUtils";
-import crypto from "crypto";
+import { Redis } from "@upstash/redis";
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_URL!,
+  token: process.env.UPSTASH_REDIS_TOKEN!,
+});
+
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_LOCK_SECONDS = 15 * 60; // 15 minutes
+const LOGIN_RATE_LIMIT_MAX = 10;
+const LOGIN_RATE_LIMIT_WINDOW = 60 * 60; // 1 hour
+const REGISTER_RATE_LIMIT_MAX = 5;
+const REGISTER_RATE_LIMIT_WINDOW = 60 * 60; // 1 hour
 
 export class AuthRepository implements IAuthRepository {
   // Seller operations
@@ -151,17 +163,34 @@ export class AuthRepository implements IAuthRepository {
     email: string,
     userType: 'seller' | 'admin'
   ): Promise<{ locked: boolean; remainingTime?: number }> {
-    // TODO: Implement with Redis or database tracking
-    return { locked: false };
+    const key = `auth:lock:${userType}:${email.toLowerCase()}`;
+    const record = await redis.get<{ lockedUntil: number }>(key);
+    if (!record) return { locked: false };
+    const remaining = Math.ceil((record.lockedUntil - Date.now()) / 1000);
+    if (remaining <= 0) {
+      await redis.del(key);
+      return { locked: false };
+    }
+    return { locked: true, remainingTime: remaining };
   }
 
   async recordFailedLogin(email: string, userType: 'seller' | 'admin'): Promise<LoginAttemptInfo> {
-    // TODO: Implement with Redis or database tracking
-    return { success: false };
+    const key = `auth:attempts:${userType}:${email.toLowerCase()}`;
+    const attempts = await redis.incr(key);
+    if (attempts === 1) await redis.expire(key, LOGIN_LOCK_SECONDS);
+
+    if (attempts >= LOGIN_MAX_ATTEMPTS) {
+      const lockKey = `auth:lock:${userType}:${email.toLowerCase()}`;
+      await redis.set(lockKey, { lockedUntil: Date.now() + LOGIN_LOCK_SECONDS * 1000 }, { ex: LOGIN_LOCK_SECONDS });
+      await redis.del(key);
+      return { success: false, locked: true, remainingTime: LOGIN_LOCK_SECONDS };
+    }
+    return { success: false, remainingAttempts: LOGIN_MAX_ATTEMPTS - attempts };
   }
 
   async resetFailedAttempts(email: string, userType: 'seller' | 'admin'): Promise<void> {
-    // TODO: Implement with Redis or database tracking
+    await redis.del(`auth:attempts:${userType}:${email.toLowerCase()}`);
+    await redis.del(`auth:lock:${userType}:${email.toLowerCase()}`);
   }
 
   // Rate limiting (simplified for now)
@@ -169,96 +198,108 @@ export class AuthRepository implements IAuthRepository {
     ipAddress: string,
     email: string,
   ): Promise<{ success: boolean; message?: string }> {
-    // TODO: Implement with Redis
+    const key = `rate:login:${ipAddress}`;
+    const count = await redis.incr(key);
+    if (count === 1) await redis.expire(key, LOGIN_RATE_LIMIT_WINDOW);
+    if (count > LOGIN_RATE_LIMIT_MAX) {
+      return { success: false, message: 'Too many login attempts. Please try again later.' };
+    }
     return { success: true };
   }
 
   async checkRegisterRateLimit(
     ipAddress: string,
   ): Promise<{ success: boolean; message?: string }> {
-    // TODO: Implement with Redis
+    const key = `rate:register:${ipAddress}`;
+    const count = await redis.incr(key);
+    if (count === 1) await redis.expire(key, REGISTER_RATE_LIMIT_WINDOW);
+    if (count > REGISTER_RATE_LIMIT_MAX) {
+      return { success: false, message: 'Too many registration attempts. Please try again later.' };
+    }
     return { success: true };
   }
 
-  // Password reset (simplified for now)
-  async storeResetCode(
-    email: string,
-    userType: 'seller' | 'admin',
-    hashedCode: string,
-    expires: Date,
-  ): Promise<void> {
+  // Password reset (seller only)
+  async storeResetCode(email: string, otp: string, salt: string, expires: Date): Promise<void> {
     try {
-      const Model = userType === 'seller' ? SellerModel : AdminModel;
-      await Model.findOneAndUpdate(
-        { email },
+      const { hashOtp } = await import("@/lib/utils/otp");
+      const result = await SellerModel.findOneAndUpdate(
+        { email: email.toLowerCase() },
         {
-          resetCode: hashedCode,
-          resetCodeExpires: expires,
-        }
+          $set: {
+            resetCode: hashOtp(otp, salt),
+            resetCodeSalt: salt,
+            resetCodeExpires: expires,
+          },
+        },
+        { new: true }
       );
+      if (!result) {
+        throw new RepositoryError("Seller not found", "storeResetCode");
+      }
     } catch (error) {
+      if (error instanceof RepositoryError) throw error;
       throw new RepositoryError("Failed to store reset code", "storeResetCode", error as Error);
     }
   }
 
-  async verifyResetCode(email: string, userType: 'seller' | 'admin', code: string): Promise<boolean> {
+  async verifyResetCode(email: string, code: string): Promise<boolean> {
     try {
-      const Model = userType === 'seller' ? SellerModel : AdminModel;
-      const user = await Model.findOne({
-        email,
-        resetCodeExpires: { $gt: new Date() }
-      }).select('+resetCode');
+      const user = await SellerModel.findOne({
+        email: email.toLowerCase(),
+        resetCodeExpires: { $gt: new Date() },
+      })
+        .select('+resetCode +resetCodeSalt')
+        .lean() as any;
 
-      if (!user || !user.resetCode) {
+      if (!user?.resetCode || !user?.resetCodeSalt) {
         return false;
       }
 
-      return await verifyPassword(code, user.resetCode);
+      const { verifyOtp } = await import("@/lib/utils/otp");
+      return verifyOtp(code, user.resetCodeSalt, user.resetCode);
     } catch (error) {
       throw new RepositoryError("Failed to verify reset code", "verifyResetCode", error as Error);
     }
   }
 
-  async clearResetCode(email: string, userType: 'seller' | 'admin'): Promise<void> {
+  async clearResetCode(email: string): Promise<void> {
     try {
-      const Model = userType === 'seller' ? SellerModel : AdminModel;
-      await Model.findOneAndUpdate(
-        { email },
-        {
-          $unset: {
-            resetCode: 1,
-            resetCodeExpires: 1,
-          }
-        }
+      await SellerModel.findOneAndUpdate(
+        { email: email.toLowerCase() },
+        { $unset: { resetCode: 1, resetCodeSalt: 1, resetCodeExpires: 1 } }
       );
     } catch (error) {
       throw new RepositoryError("Failed to clear reset code", "clearResetCode", error as Error);
     }
   }
 
-  // Email operations (simplified for now)
-  async sendPasswordResetEmail(
-    email: string,
-    name: string,
-    code: string,
-    userType: 'seller' | 'admin'
-  ): Promise<void> {
-    // TODO: Implement email service
-    console.log(`Sending reset code ${code} to ${email} (${userType})`);
+  async sendPasswordResetEmail(email: string, name: string, code: string): Promise<void> {
+    const { sendEmail, getResetPasswordOTPEmailHTML } = await import('@/lib/emailService');
+    const html = getResetPasswordOTPEmailHTML(code, name);
+    const sent = await sendEmail({
+      to: email,
+      subject: '🔐 Reset Your Password - VFurniture',
+      html,
+      text: `Hi ${name},\n\nYour password reset code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, ignore this email.`,
+    });
+    if (!sent) {
+      throw new RepositoryError("Email delivery failed", "sendPasswordResetEmail");
+    }
   }
 
   // OTP operations for signup
   async storeSignupOtp(
     email: string,
-    hashedOtp: string,
+    otp: string,
+    _salt: string,
     expires: Date,
     signupData: { email: string; password: string }
   ): Promise<void> {
     try {
-      // For now, store in memory or use a simple cache
-      // In production, you'd use Redis or a database table
-      console.log(`Storing OTP for ${email}, expires at ${expires}`);
-      // TODO: Implement proper OTP storage
+      const key = `signup:data:${email.toLowerCase()}`;
+      const ttl = Math.ceil((expires.getTime() - Date.now()) / 1000);
+      await redis.set(key, signupData, { ex: ttl > 0 ? ttl : 300 });
     } catch (error) {
       throw new RepositoryError("Failed to store signup OTP", "storeSignupOtp", error as Error);
     }
@@ -266,10 +307,9 @@ export class AuthRepository implements IAuthRepository {
 
   async verifySignupOtp(email: string, otp: string): Promise<boolean> {
     try {
-      // TODO: Implement OTP verification
-      console.log(`Verifying OTP ${otp} for ${email}`);
-      // For now, accept any 6-digit code
-      return /^\d{6}$/.test(otp);
+      const { verifyOTP } = await import('@/lib/otpService');
+      const result = await verifyOTP(email, otp);
+      return result.success;
     } catch (error) {
       throw new RepositoryError("Failed to verify signup OTP", "verifySignupOtp", error as Error);
     }
@@ -277,9 +317,8 @@ export class AuthRepository implements IAuthRepository {
 
   async isSignupOtpVerified(email: string): Promise<boolean> {
     try {
-      // TODO: Check if OTP was verified for this email
-      console.log(`Checking if OTP verified for ${email}`);
-      return true; // For now, always return true
+      const { isEmailVerified } = await import('@/lib/otpService');
+      return await isEmailVerified(email);
     } catch (error) {
       throw new RepositoryError("Failed to check OTP verification", "isSignupOtpVerified", error as Error);
     }
@@ -287,30 +326,50 @@ export class AuthRepository implements IAuthRepository {
 
   async clearSignupOtp(email: string): Promise<void> {
     try {
-      // TODO: Clear OTP data for email
-      console.log(`Clearing OTP data for ${email}`);
+      const { clearOTPRecord } = await import('@/lib/otpService');
+      await clearOTPRecord(email);
+      await redis.del(`signup:data:${email.toLowerCase()}`);
     } catch (error) {
       throw new RepositoryError("Failed to clear signup OTP", "clearSignupOtp", error as Error);
     }
   }
 
-  async updateSignupOtp(email: string, hashedOtp: string, expires: Date): Promise<void> {
+  async updateSignupOtp(email: string, _otp: string, _salt: string, expires: Date): Promise<void> {
     try {
-      // TODO: Update OTP for email
-      console.log(`Updating OTP for ${email}, expires at ${expires}`);
+      // Clear old OTP record (new one will be stored by sendSignupOtpEmail → storeOTP)
+      await redis.del(`otp:${email.toLowerCase()}`);
+      // Refresh signup data TTL so credentials don't expire before step 2
+      const key = `signup:data:${email.toLowerCase()}`;
+      const existing = await redis.get<{ email: string; password: string }>(key);
+      if (existing) {
+        const ttl = Math.ceil((expires.getTime() - Date.now()) / 1000);
+        await redis.set(key, existing, { ex: ttl > 0 ? ttl : 300 });
+      }
     } catch (error) {
       throw new RepositoryError("Failed to update signup OTP", "updateSignupOtp", error as Error);
     }
   }
 
-  async sendSignupOtpEmail(email: string, otp: string): Promise<void> {
+  async sendSignupOtpEmail(email: string, otp: string, userName: string = 'User'): Promise<void> {
     try {
-      // TODO: Implement email service for OTP
-      console.log(`Sending OTP ${otp} to ${email}`);
+      const { sendOTPEmail } = await import('@/lib/otpService');
+      const sent = await sendOTPEmail(email, otp, userName);
+      if (!sent) {
+        throw new Error('Email delivery failed');
+      }
     } catch (error) {
       throw new RepositoryError("Failed to send signup OTP email", "sendSignupOtpEmail", error as Error);
     }
   }
+  async getSignupData(email: string): Promise<{ email: string; password: string } | null> {
+      try {
+        const key = `signup:data:${email.toLowerCase()}`;
+        const data = await redis.get<{ email: string; password: string }>(key);
+        return data ?? null;
+      } catch (error) {
+        throw new RepositoryError("Failed to get signup data", "getSignupData", error as Error);
+      }
+    }
 
   // Helper methods
   private mapToSellerType(seller: any): Seller {

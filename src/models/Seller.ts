@@ -21,6 +21,7 @@ export interface ISeller extends Document {
     rating?: number;
     verified: boolean;
     resetCode?: string;
+    resetCodeSalt?: string;
     resetCodeExpires?: Date;
 }
 
@@ -116,6 +117,10 @@ const SellerSchema = new Schema<ISeller>(
             default: false
         },
         resetCode: {
+            type: String,
+            select: false
+        },
+        resetCodeSalt: {
             type: String,
             select: false
         },

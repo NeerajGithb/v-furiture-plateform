@@ -49,37 +49,47 @@ export class AdminAnalyticsRepository implements IAdminAnalyticsRepository {
 
   async getAnalyticsOverview(query: AdminAnalyticsQueryRequest): Promise<AnalyticsOverview> {
     const dateFilter = this.getDateFilter(query);
-    
-    const [revenueStats, userStats, productStats, sellerStats] = await Promise.all([
+
+    // Calculate previous period for growth comparison
+    const currentStart: Date = (dateFilter as any).createdAt?.$gte || getStartDateFromPeriod('30d');
+    const periodMs = Date.now() - currentStart.getTime();
+    const prevStart = new Date(currentStart.getTime() - periodMs);
+    const prevEnd = currentStart;
+    const prevFilter = { createdAt: { $gte: prevStart, $lt: prevEnd } };
+
+    const [revenueStats, userStats, productStats, sellerStats, prevRevenueStats, prevUserStats, prevOrderStats] = await Promise.all([
       Order.aggregate([
         { $match: { ...dateFilter, paymentStatus: 'paid', orderStatus: 'delivered' } },
-        {
-          $group: {
-            _id: null,
-            totalRevenue: { $sum: '$totalAmount' },
-            totalOrders: { $sum: 1 },
-            avgOrderValue: { $avg: '$totalAmount' }
-          }
-        }
+        { $group: { _id: null, totalRevenue: { $sum: '$totalAmount' }, totalOrders: { $sum: 1 }, avgOrderValue: { $avg: '$totalAmount' } } }
       ]),
       User.countDocuments(dateFilter),
       Product.countDocuments(dateFilter),
-      Seller.countDocuments(dateFilter)
+      Seller.countDocuments(dateFilter),
+      Order.aggregate([
+        { $match: { ...prevFilter, paymentStatus: 'paid', orderStatus: 'delivered' } },
+        { $group: { _id: null, totalRevenue: { $sum: '$totalAmount' }, totalOrders: { $sum: 1 } } }
+      ]),
+      User.countDocuments(prevFilter),
+      Order.countDocuments({ ...prevFilter, paymentStatus: 'paid', orderStatus: 'delivered' }),
     ]);
 
-    const currentStats = revenueStats[0] || { totalRevenue: 0, totalOrders: 0, avgOrderValue: 0 };
+    const current = revenueStats[0] || { totalRevenue: 0, totalOrders: 0, avgOrderValue: 0 };
+    const prev = prevRevenueStats[0] || { totalRevenue: 0, totalOrders: 0 };
+
+    const calcGrowth = (curr: number, previous: number) =>
+      previous > 0 ? Math.round(((curr - previous) / previous) * 100 * 10) / 10 : curr > 0 ? 100 : 0;
 
     return {
-      totalRevenue: currentStats.totalRevenue,
-      totalOrders: currentStats.totalOrders,
+      totalRevenue: current.totalRevenue,
+      totalOrders: current.totalOrders,
       totalUsers: userStats,
       totalProducts: productStats,
       totalSellers: sellerStats,
-      revenueGrowth: 0,
-      ordersGrowth: 0,
-      usersGrowth: 0,
-      avgOrderValue: currentStats.avgOrderValue,
-      conversionRate: 0,
+      revenueGrowth: calcGrowth(current.totalRevenue, prev.totalRevenue),
+      ordersGrowth: calcGrowth(current.totalOrders, prev.totalOrders),
+      usersGrowth: calcGrowth(userStats, prevUserStats),
+      avgOrderValue: current.avgOrderValue,
+      conversionRate: 0, // Requires session tracking — not available from order data alone
     };
   }
 
@@ -339,87 +349,125 @@ export class AdminAnalyticsRepository implements IAdminAnalyticsRepository {
 
   async getUserAnalytics(query: AdminAnalyticsQueryRequest): Promise<UserAnalytics> {
     const dateFilter = this.getDateFilter(query);
-    
-    const userStats = await User.aggregate([
-      { $match: dateFilter },
-      {
-        $group: {
-          _id: null,
-          newUsers: { $sum: 1 },
-          activeUsers: { $sum: 1 },
-          returningUsers: { $sum: 0 }
-        }
-      }
-    ]);
 
-    const stats = userStats[0] || { newUsers: 0, activeUsers: 0, returningUsers: 0 };
+    const currentStart: Date = (dateFilter as any).createdAt?.$gte || getStartDateFromPeriod('30d');
+    const periodMs = Date.now() - currentStart.getTime();
+    const prevStart = new Date(currentStart.getTime() - periodMs);
+    const prevFilter = { createdAt: { $gte: prevStart, $lt: currentStart } };
+
+    // New users in period
+    const newUsers = await User.countDocuments(dateFilter);
+
+    // Returning users = users created before the period who placed an order in the period
+    const returningUsersAgg = await Order.aggregate([
+      { $match: { ...dateFilter } },
+      { $group: { _id: '$userId' } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      { $unwind: '$user' },
+      { $match: { 'user.createdAt': { $lt: currentStart } } },
+      { $count: 'count' }
+    ]);
+    const returningUsers = returningUsersAgg[0]?.count || 0;
+
+    // Active users = users who placed at least one order in the period
+    const activeUsersAgg = await Order.aggregate([
+      { $match: dateFilter },
+      { $group: { _id: '$userId' } },
+      { $count: 'count' }
+    ]);
+    const activeUsers = activeUsersAgg[0]?.count || 0;
+
+    // Retention rate = returning / (new + returning)
+    const totalEngaged = newUsers + returningUsers;
+    const userRetentionRate = totalEngaged > 0
+      ? Math.round((returningUsers / totalEngaged) * 100 * 10) / 10
+      : 0;
+
+    // Users by location from shipping addresses
+    const locationAgg = await Order.aggregate([
+      { $match: dateFilter },
+      { $group: { _id: '$shippingAddress.state', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]);
+    const totalLocationOrders = locationAgg.reduce((s: number, l: any) => s + l.count, 0);
+    const usersByLocation = locationAgg
+      .filter((l: any) => l._id)
+      .map((l: any) => ({
+        location: l._id,
+        count: l.count,
+        percentage: totalLocationOrders > 0 ? Math.round((l.count / totalLocationOrders) * 100) : 0
+      }));
 
     return {
-      newUsers: stats.newUsers,
-      activeUsers: stats.activeUsers,
-      returningUsers: stats.returningUsers,
-      userRetentionRate: 0,
-      avgSessionDuration: 0,
-      bounceRate: 0,
-      usersByLocation: []
+      newUsers,
+      activeUsers,
+      returningUsers,
+      userRetentionRate,
+      avgSessionDuration: 0, // Requires client-side session tracking
+      bounceRate: 0,         // Requires client-side session tracking
+      usersByLocation
     };
   }
 
   async getSalesAnalytics(query: AdminAnalyticsQueryRequest): Promise<SalesAnalytics> {
     const dateFilter = this.getDateFilter(query);
     const paidFilter = { ...dateFilter, paymentStatus: 'paid', orderStatus: 'delivered' };
-    
-    const [salesStats, ordersByStatus, paymentMethods] = await Promise.all([
+
+    const currentStart: Date = (dateFilter as any).createdAt?.$gte || getStartDateFromPeriod('30d');
+    const periodMs = Date.now() - currentStart.getTime();
+    const prevStart = new Date(currentStart.getTime() - periodMs);
+    const prevPaidFilter = { createdAt: { $gte: prevStart, $lt: currentStart }, paymentStatus: 'paid', orderStatus: 'delivered' };
+
+    const [salesStats, prevSalesStats, ordersByStatus, paymentMethods] = await Promise.all([
       Order.aggregate([
         { $match: paidFilter },
-        {
-          $group: {
-            _id: null,
-            totalSales: { $sum: '$totalAmount' },
-            avgOrderValue: { $avg: '$totalAmount' },
-            orderCount: { $sum: 1 }
-          }
-        }
+        { $group: { _id: null, totalSales: { $sum: '$totalAmount' }, avgOrderValue: { $avg: '$totalAmount' }, orderCount: { $sum: 1 } } }
+      ]),
+      Order.aggregate([
+        { $match: prevPaidFilter },
+        { $group: { _id: null, totalSales: { $sum: '$totalAmount' } } }
       ]),
       Order.aggregate([
         { $match: dateFilter },
-        {
-          $group: {
-            _id: '$orderStatus',
-            count: { $sum: 1 }
-          }
-        }
+        { $group: { _id: '$orderStatus', count: { $sum: 1 } } }
       ]),
       Order.aggregate([
         { $match: paidFilter },
-        {
-          $group: {
-            _id: '$paymentMethod',
-            count: { $sum: 1 },
-            amount: { $sum: '$totalAmount' }
-          }
-        }
+        { $group: { _id: '$paymentMethod', count: { $sum: 1 }, amount: { $sum: '$totalAmount' } } }
       ])
     ]);
 
     const sales = salesStats[0] || { totalSales: 0, avgOrderValue: 0, orderCount: 0 };
-    const totalOrders = ordersByStatus.reduce((sum: number, status: any) => sum + status.count, 0);
-    const totalPaymentAmount = paymentMethods.reduce((sum: number, method: any) => sum + method.amount, 0);
+    const prevSales = prevSalesStats[0]?.totalSales || 0;
+    const salesGrowth = prevSales > 0
+      ? Math.round(((sales.totalSales - prevSales) / prevSales) * 100 * 10) / 10
+      : sales.totalSales > 0 ? 100 : 0;
+
+    const totalOrders = ordersByStatus.reduce((sum: number, s: any) => sum + s.count, 0);
+    const totalPaymentAmount = paymentMethods.reduce((sum: number, m: any) => sum + m.amount, 0);
 
     return {
       totalSales: sales.totalSales,
-      salesGrowth: 0,
+      salesGrowth,
       avgOrderValue: sales.avgOrderValue,
-      ordersByStatus: ordersByStatus.map((status: any) => ({
-        status: status._id,
-        count: status.count,
-        percentage: totalOrders > 0 ? Math.round((status.count / totalOrders) * 100) : 0
+      ordersByStatus: ordersByStatus.map((s: any) => ({
+        status: s._id,
+        count: s.count,
+        percentage: totalOrders > 0 ? Math.round((s.count / totalOrders) * 100) : 0
       })),
-      paymentMethods: paymentMethods.map((method: any) => ({
-        method: method._id || 'Unknown',
-        count: method.count,
-        amount: method.amount,
-        percentage: totalPaymentAmount > 0 ? Math.round((method.amount / totalPaymentAmount) * 100) : 0
+      paymentMethods: paymentMethods.map((m: any) => ({
+        method: m._id || 'Unknown',
+        count: m.count,
+        amount: m.amount,
+        percentage: totalPaymentAmount > 0 ? Math.round((m.amount / totalPaymentAmount) * 100) : 0
       }))
     };
   }

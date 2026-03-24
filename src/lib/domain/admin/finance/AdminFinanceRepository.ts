@@ -182,6 +182,21 @@ export class AdminFinanceRepository implements IAdminFinanceRepository {
       };
     });
 
+    // Calculate revenue growth vs previous period
+    const currentPeriodStart = (dateFilter as any).createdAt?.$gte || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const periodLength = Date.now() - currentPeriodStart.getTime();
+    const prevPeriodStart = new Date(currentPeriodStart.getTime() - periodLength);
+    const prevPeriodEnd = currentPeriodStart;
+
+    const prevStats = await Order.aggregate([
+      { $match: { createdAt: { $gte: prevPeriodStart, $lt: prevPeriodEnd }, paymentStatus: 'paid', orderStatus: 'delivered' } },
+      { $group: { _id: null, totalRevenue: { $sum: '$totalAmount' } } }
+    ]);
+    const prevRevenue = prevStats[0]?.totalRevenue || 0;
+    const revenueGrowth = prevRevenue > 0
+      ? Math.round(((stats.totalRevenue - prevRevenue) / prevRevenue) * 100 * 10) / 10
+      : stats.totalRevenue > 0 ? 100 : 0;
+
     return {
       summary: {
         totalRevenue: stats.totalRevenue,
@@ -191,7 +206,7 @@ export class AdminFinanceRepository implements IAdminFinanceRepository {
         completedPayouts: payouts.completedPayouts,
         pendingPayouts: payouts.pendingPayouts,
         totalPayouts: payouts.totalPayouts,
-        revenueGrowth: 0 // TODO: Calculate based on previous period
+        revenueGrowth,
       },
       stats: {
         totalOrders: stats.totalOrders,

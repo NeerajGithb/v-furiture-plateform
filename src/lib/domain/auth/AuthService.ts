@@ -3,6 +3,7 @@ import { AuthRepository } from "./AuthRepository";
 import {
   SellerLoginRequest,
   SellerRegisterRequest,
+  SellerSignupStep2Request,
   AdminLoginRequest,
   SendResetCodeRequest,
   VerifyResetCodeRequest,
@@ -33,6 +34,7 @@ import {
   verifyAccessToken,
   verifyRefreshToken,
 } from "@/lib/middleware/authUtils";
+import { generateOtp } from "@/lib/utils/otp";
 import crypto from "crypto";
 
 export interface AuthTokens {
@@ -295,12 +297,11 @@ export class AuthService {
     }
 
     // Generate OTP
-    const otp = crypto.randomInt(100000, 999999).toString();
-    const hashedOtp = await hashPassword(otp);
+    const { otp, salt } = generateOtp();
     const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     // Store OTP and temporary signup data
-    await this.repository.storeSignupOtp(email, hashedOtp, expires, { email, password });
+    await this.repository.storeSignupOtp(email, otp, salt, expires, { email, password });
 
     // Send OTP email
     await this.repository.sendSignupOtpEmail(email, otp);
@@ -326,7 +327,7 @@ export class AuthService {
 
   // Multi-step seller signup - Step 2: Complete registration with business info
   async sellerSignupStep2(
-    data: SellerRegisterRequest,
+    data: SellerSignupStep2Request,
     ipAddress: string,
     userAgent: string,
   ): Promise<SellerRegisterResult> {
@@ -338,14 +339,20 @@ export class AuthService {
       throw new InvalidResetCodeError();
     }
 
+    // Retrieve password stored during step 1
+    const signupData = await this.repository.getSignupData(email);
+    if (!signupData?.password) {
+      throw new InvalidResetCodeError();
+    }
+
     // Check if email already exists (double check)
     const existingSeller = await this.repository.findSellerByEmail(email);
     if (existingSeller) {
       throw new EmailAlreadyExistsError(email);
     }
 
-    // Create seller
-    const seller = await this.repository.createSeller(data);
+    // Create seller with password from Redis + business info from step 2
+    const seller = await this.repository.createSeller({ ...data, password: signupData.password });
 
     // Clear OTP data
     await this.repository.clearSignupOtp(email);
@@ -377,12 +384,11 @@ export class AuthService {
     }
 
     // Generate new OTP
-    const otp = crypto.randomInt(100000, 999999).toString();
-    const hashedOtp = await hashPassword(otp);
+    const { otp, salt } = generateOtp();
     const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     // Update OTP
-    await this.repository.updateSignupOtp(email, hashedOtp, expires);
+    await this.repository.updateSignupOtp(email, otp, salt, expires);
 
     // Send OTP email
     await this.repository.sendSignupOtpEmail(email, otp);
@@ -393,79 +399,82 @@ export class AuthService {
     };
   }
 
-  // Send reset code
+  // Send reset code (seller only)
   async sendResetCode(data: SendResetCodeRequest): Promise<{ message: string }> {
-    const { email, userType } = data;
+    const { email } = data;
 
-    // Find user
-    const user = userType === 'seller' 
-      ? await this.repository.findSellerByEmail(email)
-      : await this.repository.findAdminByEmail(email);
-
-    if (!user) {
-      if (userType === 'seller') {
-        throw new SellerNotFoundError(email);
-      } else {
-        throw new AdminNotFoundError(email);
-      }
+    const seller = await this.repository.findSellerByEmail(email);
+    // Don't reveal whether email exists — always return same message
+    if (!seller) {
+      return { message: "If an account exists with this email, a reset code has been sent." };
     }
 
-    // Generate reset code
-    const resetCode = crypto.randomInt(100000, 999999).toString();
-    const hashedCode = await hashPassword(resetCode);
+    const { otp, salt } = generateOtp();
     const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Store reset code
-    await this.repository.storeResetCode(email, userType, hashedCode, expires);
+    await this.repository.storeResetCode(email, otp, salt, expires);
+    await this.repository.sendPasswordResetEmail(email, seller.businessName, otp);
 
-    // Send email
-    const name = userType === 'seller' ? (user as any).businessName : (user as any).name;
-    await this.repository.sendPasswordResetEmail(email, name, resetCode, userType);
-
-    return {
-      message: "Reset code sent to your email",
-    };
+    return { message: "If an account exists with this email, a reset code has been sent." };
   }
 
-  // Verify reset code
+  // Verify reset code (seller only)
   async verifyResetCode(data: VerifyResetCodeRequest): Promise<{ message: string }> {
-    const { email, code, userType } = data;
+    const { email, code } = data;
 
-    const isValid = await this.repository.verifyResetCode(email, userType, code);
+    const isValid = await this.repository.verifyResetCode(email, code);
     if (!isValid) {
       throw new InvalidResetCodeError();
     }
 
-    return {
-      message: "Reset code verified successfully",
-    };
+    const { Redis } = await import("@upstash/redis");
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_URL!,
+      token: process.env.UPSTASH_REDIS_TOKEN!,
+    });
+    await redis.set(`reset_verified:seller:${email}`, 1, { ex: 600 });
+
+    return { message: "Reset code verified successfully" };
   }
 
-  // Reset password
+  // Reset password (seller only)
   async resetPassword(data: ResetPasswordRequest): Promise<{ message: string }> {
-    const { email, newPassword, userType } = data;
+    const { email, newPassword } = data;
 
-    // Verify reset code is still valid (you might want to require code verification first)
-    // For now, we'll just update the password and clear the reset code
+    const { Redis } = await import("@upstash/redis");
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_URL!,
+      token: process.env.UPSTASH_REDIS_TOKEN!,
+    });
 
-    // Update password
-    if (userType === 'seller') {
-      await this.repository.updateSellerPassword(email, newPassword);
-    } else {
-      await this.repository.updateAdminPassword(email, newPassword);
+    const verified = await redis.get(`reset_verified:seller:${email}`);
+    if (!verified) {
+      throw new InvalidResetCodeError();
     }
 
-    // Clear reset code
-    await this.repository.clearResetCode(email, userType);
+    await this.repository.updateSellerPassword(email, newPassword);
 
-    return {
-      message: "Password reset successfully",
-    };
+    await Promise.all([
+      redis.del(`reset_verified:seller:${email}`),
+      this.repository.clearResetCode(email),
+    ]);
+
+    return { message: "Password reset successfully" };
   }
 
   // Logout
   async logout(token: string): Promise<{ success: boolean; message: string }> {
-    // TODO: Add token to blacklist if using Redis
+    try {
+      const { Redis } = await import("@upstash/redis");
+      const redis = new Redis({
+        url: process.env.UPSTASH_REDIS_URL!,
+        token: process.env.UPSTASH_REDIS_TOKEN!,
+      });
+      // Blacklist the token until it would naturally expire (1 hour)
+      await redis.set(`blacklist:${token}`, 1, { ex: 3600 });
+    } catch {
+      // Non-fatal — still log out the user
+    }
     return {
       success: true,
       message: "Logged out successfully",

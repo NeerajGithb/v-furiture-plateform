@@ -67,34 +67,26 @@ export interface IAuthRepository {
     ipAddress: string,
   ): Promise<{ success: boolean; message?: string }>;
 
-  // Password reset
-  storeResetCode(
-    email: string,
-    userType: 'seller' | 'admin',
-    hashedCode: string,
-    expires: Date,
-  ): Promise<void>;
-  verifyResetCode(email: string, userType: 'seller' | 'admin', code: string): Promise<boolean>;
-  clearResetCode(email: string, userType: 'seller' | 'admin'): Promise<void>;
+  // Password reset (seller only)
+  storeResetCode(email: string, otp: string, salt: string, expires: Date): Promise<void>;
+  verifyResetCode(email: string, code: string): Promise<boolean>;
+  clearResetCode(email: string): Promise<void>;
 
   // Email operations
-  sendPasswordResetEmail(
-    email: string,
-    name: string,
-    code: string,
-    userType: 'seller' | 'admin'
-  ): Promise<void>;
+  sendPasswordResetEmail(email: string, name: string, code: string): Promise<void>;
 
   // OTP operations for signup
   storeSignupOtp(
     email: string,
-    hashedOtp: string,
+    otp: string,
+    salt: string,
     expires: Date,
     signupData: { email: string; password: string }
   ): Promise<void>;
   verifySignupOtp(email: string, otp: string): Promise<boolean>;
   isSignupOtpVerified(email: string): Promise<boolean>;
   clearSignupOtp(email: string): Promise<void>;
-  updateSignupOtp(email: string, hashedOtp: string, expires: Date): Promise<void>;
+  updateSignupOtp(email: string, otp: string, salt: string, expires: Date): Promise<void>;
   sendSignupOtpEmail(email: string, otp: string): Promise<void>;
+  getSignupData(email: string): Promise<{ email: string; password: string } | null>;
 }

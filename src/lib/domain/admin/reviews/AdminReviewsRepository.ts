@@ -191,34 +191,42 @@ export class AdminReviewsRepository implements IAdminReviewsRepository {
   }
 
   async getStats(period?: string): Promise<ReviewStats> {
-      // Get time filter
       const timeFilter: any = {};
       if (period) {
         const startDate = getStartDateFromPeriod(period);
         timeFilter.createdAt = { $gte: startDate };
       }
 
-      // Fetch all reviews in the time period
-      const reviews = await Review.find(timeFilter)
-        .select('rating status reports createdAt')
-        .lean();
+      const stats = await Review.aggregate([
+        { $match: timeFilter },
+        {
+          $group: {
+            _id: null,
+            totalReviews: { $sum: 1 },
+            avgRating: { $avg: '$rating' },
+            r5: { $sum: { $cond: [{ $eq: ['$rating', 5] }, 1, 0] } },
+            r4: { $sum: { $cond: [{ $eq: ['$rating', 4] }, 1, 0] } },
+            r3: { $sum: { $cond: [{ $eq: ['$rating', 3] }, 1, 0] } },
+            r2: { $sum: { $cond: [{ $eq: ['$rating', 2] }, 1, 0] } },
+            r1: { $sum: { $cond: [{ $eq: ['$rating', 1] }, 1, 0] } },
+            pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
+            approved: { $sum: { $cond: [{ $eq: ['$status', 'approved'] }, 1, 0] } },
+            rejected: { $sum: { $cond: [{ $eq: ['$status', 'rejected'] }, 1, 0] } },
+            reported: { $sum: { $cond: [{ $gt: [{ $size: { $ifNull: ['$reports', []] } }, 0] }, 1, 0] } },
+          }
+        }
+      ]);
+
+      const s = stats[0] || { totalReviews: 0, avgRating: 0, r5: 0, r4: 0, r3: 0, r2: 0, r1: 0, pending: 0, approved: 0, rejected: 0, reported: 0 };
 
       return {
-        totalReviews: reviews.length,
-        averageRating: reviews.length > 0
-          ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-          : 0,
-        breakdown: {
-          5: reviews.filter(r => r.rating === 5).length,
-          4: reviews.filter(r => r.rating === 4).length,
-          3: reviews.filter(r => r.rating === 3).length,
-          2: reviews.filter(r => r.rating === 2).length,
-          1: reviews.filter(r => r.rating === 1).length,
-        },
-        pendingReviews: reviews.filter(r => r.status === 'pending').length,
-        approvedReviews: reviews.filter(r => r.status === 'approved').length,
-        rejectedReviews: reviews.filter(r => r.status === 'rejected').length,
-        reportedReviews: reviews.filter(r => r.reports && r.reports.length > 0).length,
+        totalReviews: s.totalReviews,
+        averageRating: Math.round((s.avgRating || 0) * 10) / 10,
+        breakdown: { 5: s.r5, 4: s.r4, 3: s.r3, 2: s.r2, 1: s.r1 },
+        pendingReviews: s.pending,
+        approvedReviews: s.approved,
+        rejectedReviews: s.rejected,
+        reportedReviews: s.reported,
       };
   }
 

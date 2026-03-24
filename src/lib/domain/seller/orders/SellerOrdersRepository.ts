@@ -1,6 +1,5 @@
 import Order from "@/models/Order";
 import Product from "@/models/Product";
-import User from "@/models/User";
 import { getStartDateFromPeriod } from "@/lib/domain/shared/dateUtils";
 import { 
   OrderNotFoundError, 
@@ -24,10 +23,6 @@ export class SellerOrdersRepository {
     sortBy?: string;
     sortOrder?: string;
   }) {
-    if (!User) {
-      throw new Error('User model not available');
-    }
-
     const productIds = await this.getSellerProductIds(sellerId);
     if (productIds.length === 0) {
       return { orders: [], total: 0 };
@@ -46,29 +41,27 @@ export class SellerOrdersRepository {
       query.orderStatus = options.status;
     }
 
-    const orders = await Order.find(query)
-      .populate('userId', 'name email phone')
-      .populate('items.productId', 'name mainImage price')
-      .sort({ [options.sortBy || 'createdAt']: options.sortOrder === 'asc' ? 1 : -1 })
-      .lean();
-
-    let filteredOrders = orders;
     if (options.search) {
-      const searchLower = options.search.toLowerCase();
-      filteredOrders = orders.filter((order: any) => {
-        const customerName = order.userId?.name?.toLowerCase() || '';
-        const customerEmail = order.userId?.email?.toLowerCase() || '';
-        const orderNumber = order.orderNumber?.toLowerCase() || '';
-        
-        return customerName.includes(searchLower) || 
-               customerEmail.includes(searchLower) || 
-               orderNumber.includes(searchLower);
-      });
+      query.$or = [
+        { orderNumber: { $regex: options.search, $options: 'i' } },
+        { 'shippingAddress.fullName': { $regex: options.search, $options: 'i' } },
+      ];
     }
 
-    const total = filteredOrders.length;
-    const startIndex = (options.page - 1) * options.limit;
-    const paginatedOrders = filteredOrders.slice(startIndex, startIndex + options.limit);
+    const sort: Record<string, 1 | -1> = {
+      [options.sortBy || 'createdAt']: options.sortOrder === 'asc' ? 1 : -1
+    };
+
+    const [paginatedOrders, total] = await Promise.all([
+      Order.find(query)
+        .populate('userId', 'name email phone')
+        .populate('items.productId', 'name mainImage price')
+        .sort(sort)
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
+        .lean(),
+      Order.countDocuments(query)
+    ]);
 
     const formattedOrders = paginatedOrders.map((order: any) => ({
       id: order._id.toString(),

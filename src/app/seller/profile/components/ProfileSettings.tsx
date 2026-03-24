@@ -31,8 +31,10 @@ export function ProfileSettings({
   const tabs = [
     { id: 'business', label: 'Business Information', count: null },
     { id: 'security', label: 'Security', count: null },
-    { id: 'verification', label: 'Verification', count: profile?.verified ? null : '!' }
-  ];
+    ...(!profile?.verified && profile?.status === 'active'
+      ? [{ id: 'verification', label: 'Verification', count: '!' }]
+      : []),
+  ] as { id: string; label: string; count: string | null }[];
 
   return (
     <div className="bg-white rounded-lg border border-gray-200">

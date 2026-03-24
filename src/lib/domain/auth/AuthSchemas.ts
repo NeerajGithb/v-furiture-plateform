@@ -70,9 +70,28 @@ export const RefreshTokenSchema = z.object({
   refreshToken: z.string().min(1, "Refresh token is required"),
 });
 
+// Seller Signup Step 1 schema — validates email + password strength before sending OTP
+export const SellerSignupStep1Schema = z.object({
+  email: z.string().email("Invalid email format").trim().toLowerCase(),
+  password: passwordSchema,
+});
+
+// Seller Signup Step 2 schema — no password, it's retrieved from Redis
+export const SellerSignupStep2Schema = z.object({
+  businessName: z.string().min(1, "Business name is required").max(200).trim(),
+  contactPerson: z.string().min(1, "Contact person is required").max(100).trim(),
+  email: z.string().email("Invalid email format").trim().toLowerCase(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  businessType: z.enum(['manufacturer', 'wholesaler', 'retailer', 'distributor', 'other']).optional(),
+  gstNumber: z.string().optional(),
+});
+
 // Type exports
 export type SellerLoginRequest = z.infer<typeof SellerLoginSchema>;
 export type SellerRegisterRequest = z.infer<typeof SellerRegisterSchema>;
+export type SellerSignupStep1Request = z.infer<typeof SellerSignupStep1Schema>;
+export type SellerSignupStep2Request = z.infer<typeof SellerSignupStep2Schema>;
 export type AdminLoginRequest = z.infer<typeof AdminLoginSchema>;
 export type SendResetCodeRequest = z.infer<typeof SendResetCodeSchema>;
 export type VerifyResetCodeRequest = z.infer<typeof VerifyResetCodeSchema>;

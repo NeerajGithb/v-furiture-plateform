@@ -5,6 +5,8 @@ import { authService } from "@/lib/domain/auth/AuthService";
 import {
   SellerLoginSchema,
   SellerRegisterSchema,
+  SellerSignupStep1Schema,
+  SellerSignupStep2Schema,
   AdminLoginSchema,
   SendResetCodeSchema,
   VerifyResetCodeSchema,
@@ -80,8 +82,8 @@ export const POST = withDB(
 
       // Multi-step seller signup
       case "seller-signup-step1": {
-        // Step 1: Email and password validation, send OTP
-        const { email, password } = body;
+        // Step 1: Validate email + password strength first, then send OTP
+        const { email, password } = SellerSignupStep1Schema.parse(body);
         const result = await authService.sellerSignupStep1({ email, password }, ipAddress);
         return ApiResponseBuilder.success(result);
       }
@@ -94,8 +96,8 @@ export const POST = withDB(
       }
 
       case "seller-signup-step2": {
-        // Step 2: Complete registration with business info
-        const validatedData = SellerRegisterSchema.parse(body);
+        // Step 2: Complete registration with business info (password retrieved from Redis)
+        const validatedData = SellerSignupStep2Schema.parse(body);
         const result = await authService.sellerSignupStep2(validatedData, ipAddress, userAgent);
         return ApiResponseBuilder.created(result);
       }

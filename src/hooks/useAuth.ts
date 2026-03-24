@@ -43,7 +43,6 @@ interface VerifySignupOtpData {
 
 interface SellerSignupStep2Data {
   email: string;
-  password: string;
   businessName: string;
   contactPerson: string;
   phone: string;
@@ -173,18 +172,12 @@ export const useAuthLogout = () => {
 export const useSendResetCode = () => {
   return useMutation({
     mutationFn: (data: ResetCodeData) => authService.sendResetCode(data),
-    onError: (error: Error) => {
-      toast.error(error.message);
-    },
   });
 };
 
 export const useVerifyResetCode = () => {
   return useMutation({
     mutationFn: (data: VerifyCodeData) => authService.verifyResetCode(data),
-    onError: (error: Error) => {
-      toast.error(error.message);
-    },
   });
 };
 
@@ -194,11 +187,7 @@ export const useResetPassword = () => {
   return useMutation({
     mutationFn: (data: ResetPasswordData) => authService.resetPassword(data),
     onSuccess: () => {
-      // Redirect to login page
-      router.push("/auth/login");
-    },
-    onError: (error: Error) => {
-      toast.error(error.message);
+      router.push("/login/seller");
     },
   });
 };
@@ -207,18 +196,12 @@ export const useResetPassword = () => {
 export const useSellerSignupStep1 = () => {
   return useMutation({
     mutationFn: (data: SellerSignupStep1Data) => authService.sellerSignupStep1(data),
-    onError: (error: Error) => {
-      toast.error(error.message);
-    },
   });
 };
 
 export const useVerifySignupOtp = () => {
   return useMutation({
     mutationFn: (data: VerifySignupOtpData) => authService.verifySignupOtp(data),
-    onError: (error: Error) => {
-      toast.error(error.message);
-    },
   });
 };
 
@@ -228,11 +211,7 @@ export const useSellerSignupStep2 = () => {
   return useMutation({
     mutationFn: (data: SellerSignupStep2Data) => authService.sellerSignupStep2(data),
     onSuccess: () => {
-      // Redirect to login page after successful registration
       router.push("/login/seller");
-    },
-    onError: (error: Error) => {
-      toast.error(error.message);
     },
   });
 };
@@ -240,8 +219,5 @@ export const useSellerSignupStep2 = () => {
 export const useResendSignupOtp = () => {
   return useMutation({
     mutationFn: (data: ResendSignupOtpData) => authService.resendSignupOtp(data),
-    onError: (error: Error) => {
-      toast.error(error.message);
-    },
   });
 };

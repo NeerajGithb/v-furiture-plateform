@@ -117,7 +117,19 @@ export default function LoginForm({
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-2">
+          {userType === 'seller' && (
+            <p className="text-sm text-slate-500">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => router.push('/signup/seller')}
+                className="text-slate-900 font-semibold hover:underline focus:outline-none"
+              >
+                Sign up
+              </button>
+            </p>
+          )}
           <button
             type="button"
             onClick={() => router.push('/')}

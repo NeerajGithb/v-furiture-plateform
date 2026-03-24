@@ -42,7 +42,6 @@ interface VerifySignupOtpRequest {
 
 interface SellerSignupStep2Request {
   email: string;
-  password: string;
   businessName: string;
   contactPerson: string;
   phone: string;
@@ -143,9 +142,9 @@ class AuthService extends BasePrivateService {
 
   // Verify password reset code
   async verifyResetCode(data: VerifyResetCodeRequest): Promise<CodeResponse> {
-    const response = await this.post<{ valid: boolean }>("/auth?action=verify-reset-code", data);
+    const response = await this.post<{ message: string }>("/auth?action=verify-reset-code", data);
 
-    if (response.success && response.data?.valid) {
+    if (response.success) {
       toast.success("Code verified! Set your new password.");
       return { success: true };
     } else {
