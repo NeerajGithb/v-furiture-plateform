@@ -52,3 +52,16 @@ next-env.d.ts
 
 # utility scripts
 clear-redis-cache.js
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+Thumbs.db
+
+# Internal development notes
+REDESIGN_PROGRESS.md
